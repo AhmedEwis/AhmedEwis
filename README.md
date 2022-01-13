@@ -1,6 +1,6 @@
 ### Hi there 👋
 
-<!--https://github.com/AhmedEwis/AhmedEwis/blob/main/Red%20and%20Blue%20Geometric%20Photo%20Tech%20and%20Gaming%20Facebook%20Cover.png
+<!--
 **AhmedEwis/AhmedEwis** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
 Here are some ideas to get you started:
@@ -13,5 +13,5 @@ Here are some ideas to get you started:
 - 📫 How to reach me: ...
 - 😄 Pronouns: ...
 - ⚡ Fun fact: ...
--->
+--> https://github.com/AhmedEwis/AhmedEwis/blob/main/Red%20and%20Blue%20Geometric%20Photo%20Tech%20and%20Gaming%20Facebook%20Cover.png
 
