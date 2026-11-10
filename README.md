@@ -1,100 +1,60 @@
 <div align="center">
-<img src="https://rishavanand.github.io/static/images/greetings.gif" align="center" style="width: 100%" />
-</div>  
-  
 
-### <div align="center">I'm Ahmed Ewis, a full-time Data scientist and Artificial Intelligence developer 👨‍💻 I teach machines how to think  🚀</div>  
-  
+# Ahmed Ewis
 
-- 🔭 I’m currently working on [Warba Bank](https://www.warbabank.com/)  
-  
+### Data Scientist & AI Solution Architect · Kuwait
 
-- 🌱 I’m currently learning Web3.0 and Blockchain   
-  
+I design, build, and ship secure, production-grade AI on Azure, from LLM and agentic solutions to classical machine learning, for enterprise banking.
 
-- ❓ Ask me about anything related to Data science, machine learning and related technologies  
-  
+<a href="https://ahmedewis.github.io/"><img src="https://img.shields.io/badge/Portfolio-ahmedewis.github.io-2f7df6?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Portfolio"/></a>
+<a href="https://www.linkedin.com/in/ahmedewis95/"><img src="https://img.shields.io/badge/LinkedIn-ahmedewis95-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/></a>
+<a href="https://www.kaggle.com/ahmedewis"><img src="https://img.shields.io/badge/Kaggle-ahmedewis-20BEFF?style=for-the-badge&logo=kaggle&logoColor=white" alt="Kaggle"/></a>
 
-- ⚡ Fun fact: I use tabs over spaces  
-  
-
-<br/>  
-
-
-## My Skill Set  
-<table><tr><td valign="top" width="33%">
-
-
-
-### Frontend  
-<div align="center">  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/adobepremierepro.png" alt="Premiere Pro" height="50" />  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/c-original.svg" alt="C" height="50" />  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/cplusplus-original.svg" alt="C++" height="50" />  
 </div>
 
-</td><td valign="top" width="33%">
+---
 
+### About
 
+Microsoft Certified Data Scientist, Azure Solutions Architect, and Azure AI Apps and Agents Developer with over 6 years of experience delivering secure, scalable, AI-driven cloud solutions. I specialize in generative AI, agentic solutions, and Azure architecture, turning complex data challenges into measurable business value.
 
-### Backend  
-<div align="center">  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/python-original.svg" alt="Python" height="50" />  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/powerbi.png" alt="Power Bi" height="50" />  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/r.svg" alt="R" height="50" />  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/tensorflow-icon.svg" alt="TensorFlow" height="50" />  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/tableau.svg" alt="Tableau" height="50" />  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/pytorch-icon.svg" alt="pytorch" height="50" />  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/mysql-original-wordmark.svg" alt="MySQL" height="50" />  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/git-scm-icon.svg" alt="Git" height="50" />  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/opencv-icon.svg" alt="OpenCV" height="50" />  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/keras.png" alt="Keras" height="50" />  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/gitlab.svg" alt="GitLab" height="50" />  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/scala-original-wordmark.svg" alt="Scala" height="50" />  
-</div>
+### Core expertise
 
-</td><td valign="top" width="33%">
+- **Azure & Microsoft Foundry:** Azure AI Foundry, Azure OpenAI, AI Speech, Custom Neural Voice, Azure ML
+- **LLMs & Agentic AI:** RAG, enterprise knowledge assistants, multi-agent workflows, Copilot Studio
+- **Production & MLOps:** Docker, CI/CD with GitHub Actions, monitoring, drift detection, retraining
+- **Guardrails & Security:** content safety, identity and RBAC, secure networking
+- **Data Governance:** GDPR, CBK CORF, data residency, responsible AI
+- **Machine Learning:** churn, propensity, segmentation, forecasting
 
+### Tech stack
 
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)
+![Azure](https://img.shields.io/badge/Azure-0078D4?style=flat-square&logo=microsoftazure&logoColor=white)
+![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)
+![TensorFlow](https://img.shields.io/badge/TensorFlow-FF6F00?style=flat-square&logo=tensorflow&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=flat-square&logo=scikitlearn&logoColor=white)
+![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=flat-square&logo=langchain&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
+![SQL Server](https://img.shields.io/badge/SQL_Server-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white)
+![Google Cloud](https://img.shields.io/badge/Google_Cloud-4285F4?style=flat-square&logo=googlecloud&logoColor=white)
+![Power BI](https://img.shields.io/badge/Power_BI-F2C811?style=flat-square&logo=powerbi&logoColor=black)
 
-### DevOps  
-<div align="center">  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/amazonwebservices-original-wordmark.svg" alt="AWS" height="50" />  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/git-scm-icon.svg" alt="Git" height="50" />  
-<img style="margin: 10px" src="https://profilinator.rishav.dev/skills-assets/microsoft_azure-icon.svg" alt="Azure" height="50" />  
-</div>
+### Certifications
 
-</td></tr></table>  
+| Certification | Issuer |
+| --- | --- |
+| AB-100 · Agentic AI Business Solutions Architect Expert | Microsoft |
+| AI-103 · Azure AI Apps and Agents Developer Associate | Microsoft |
+| DP-100 · Azure Data Scientist Associate | Microsoft |
+| Professional Machine Learning Engineer | Google Cloud |
+| Associate Cloud Engineer | Google Cloud |
+| Data Science Professional Certificate | IBM |
 
-<br/>  
-
-
-## Connect with me  
 <div align="center">
-<a href="https://github.com/AhmedEwis" target="_blank">
-<img src=https://img.shields.io/badge/github-%2324292e.svg?&style=for-the-badge&logo=github&logoColor=white alt=github style="margin-bottom: 5px;" />
-</a>
-<a href="https://twitter.com/sor3a95" target="_blank">
-<img src=https://img.shields.io/badge/twitter-%2300acee.svg?&style=for-the-badge&logo=twitter&logoColor=white alt=twitter style="margin-bottom: 5px;" />
-</a>
-<a href="https://dev.to/ahmedewis" target="_blank">
-<img src=https://img.shields.io/badge/dev.to-%2308090A.svg?&style=for-the-badge&logo=dev.to&logoColor=white alt=devto style="margin-bottom: 5px;" />
-</a>
-<a href="https://linkedin.com/in/Ahmed Ewis" target="_blank">
-<img src=https://img.shields.io/badge/linkedin-%231E77B5.svg?&style=for-the-badge&logo=linkedin&logoColor=white alt=linkedin style="margin-bottom: 5px;" />
-</a>
-<a href="https://www.kaggle.com/ahmedewis" target="_blank">
-<img src=https://img.shields.io/badge/kaggle-%2344BAE8.svg?&style=for-the-badge&logo=kaggle&logoColor=white alt=kaggle style="margin-bottom: 5px;" />
-</a>  
-</div>  
-  
 
-<br/>  
+**More about my work → [ahmedewis.github.io](https://ahmedewis.github.io/)**
 
-
-## Github Stats  
-<div align="center"><img src="https://github-readme-stats.vercel.app/api?username=ahmedewis&show_icons=true&count_private=true&hide_border=true" align="center" /></div>  
-
-<br/>  
-
-
+</div>
