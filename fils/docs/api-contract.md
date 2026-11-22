@@ -1,5 +1,7 @@
 # Fils API Contract (v1)
 
+> Changes (mobile lead): transaction `kind` uses `adjust_up` and `adjust_down` for reconciliation adjustments instead of a signed `adjustment`.
+
 This is the contract between the Flutter app (`fils/mobile`) and the backend (`fils/backend`).
 The backend's generated OpenAPI at `/v1/openapi.json` is the authoritative version. This file
 describes the intent and the wire shapes both sides code against.
@@ -198,7 +200,7 @@ referenced ids (they must belong to the same user or the same household scope) a
 `currency` as a 3-letter uppercase code.
 
 - **account**: `name, kind: bank|card|cash|wallet|loan|savings, institution_id?, currency, mask_last4?, is_liability, credit_limit_minor?, opening_balance_minor, opening_balance_date, reported_balance_minor?, reported_available_minor?, reported_balance_at?, archived, color?, sort_order, is_default, include_in_net_worth`
-- **transaction**: `account_id, kind: expense|income|transfer|refund|adjustment, status: posted|pending|declined|void, amount_minor (>=0), currency, counter_account_id?, counter_amount_minor?, original_amount_minor?, original_currency?, fx_rate? (decimal string), fx_source?, merchant?, merchant_raw?, category_id?, note?, occurred_at, received_at?, source: manual|voice|sms|notification|shortcut|wallet|csv|pdf|image|paste|share|recurring, source_event_id?, refund_of_id?, transfer_group_id?, parser_id?, parser_version?, confidence?, needs_review, splits: [{category_id, amount_minor, note?}]`
+- **transaction**: `account_id, kind: expense|income|transfer|refund|adjust_up|adjust_down, status: posted|pending|declined|void, amount_minor (>=0), currency, counter_account_id?, counter_amount_minor?, original_amount_minor?, original_currency?, fx_rate? (decimal string), fx_source?, merchant?, merchant_raw?, category_id?, note?, occurred_at, received_at?, source: manual|voice|sms|notification|shortcut|wallet|csv|pdf|image|paste|share|recurring, source_event_id?, refund_of_id?, transfer_group_id?, parser_id?, parser_version?, confidence?, needs_review, splits: [{category_id, amount_minor, note?}]`
 - **category**: `name_en, name_ar, icon, color, kind: expense|income, parent_id?, is_system, archived`
 - **budget**: `category_id?, amount_minor, currency, period: cycle|monthly|weekly, rollover, alert_thresholds: [int], start_date`
 - **goal**: `name, emoji?, target_minor, currency, target_date?, account_id?, planned_monthly_minor?, contributions: [{id, amount_minor, date, note?}], archived`

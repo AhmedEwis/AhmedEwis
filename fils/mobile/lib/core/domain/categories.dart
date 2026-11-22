@@ -30,6 +30,7 @@ class Cat {
   static const personalCare = 'personal_care';
   static const cash = 'cash';
   static const other = 'other';
+  static const transfers = 'transfers';
   static const salary = 'salary';
   static const otherIncome = 'other_income';
 }
@@ -54,6 +55,7 @@ const systemCategories = <CategoryDef>[
   CategoryDef(Cat.family, 'Family', 'العائلة', '👨‍👩‍👧', 0xFFF97316),
   CategoryDef(Cat.personalCare, 'Personal Care', 'عناية شخصية', '💈', 0xFFA855F7),
   CategoryDef(Cat.cash, 'Cash', 'كاش', '💵', 0xFF84CC16),
+  CategoryDef(Cat.transfers, 'Transfers to others', 'تحويلات لآخرين', '↗️', 0xFF0891B2),
   CategoryDef(Cat.other, 'Other', 'أخرى', '📦', 0xFF94A3B8),
   CategoryDef(Cat.salary, 'Salary', 'راتب', '💰', 0xFF16A34A, income: true),
   CategoryDef(Cat.otherIncome, 'Other Income', 'دخل آخر', '💸', 0xFF0D9488, income: true),

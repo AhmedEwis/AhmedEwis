@@ -117,3 +117,9 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+hooks:
+  user_defines:
+    sqlite3:
+      # SQLite3MultipleCiphers (MIT): enables `PRAGMA key` database encryption.
+      source: sqlite3mc
