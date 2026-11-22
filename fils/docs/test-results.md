@@ -1,73 +1,84 @@
-# Test results (actually run, 2026-11-22)
+# Verification results
 
-Environment: Linux container, 4 vCPU, Flutter 3.50.1 / Dart 3.14.0, Python 3.13, PostgreSQL 16. **No physical iPhone or Android device and no emulator** (no KVM).
+Only checks that were actually run are listed.
 
-## Mobile (`fils/mobile`)
+- **Local environment:** Linux container, Flutter 3.50.1 / Dart 3.14.0, Python 3.13, PostgreSQL 16.
+- **CI:** GitHub Actions (ubuntu-24.04, macos-15).
+- **Devices:** no physical iPhone or Android device, and no emulator (no KVM).
 
-| Suite | Command | Result |
+## 1. Automated tests
+
+| Suite | Command | Result | Commit |
+|---|---|---|---|
+| Mobile unit/widget + perf + live-backend E2E | `FILS_E2E_API=http://127.0.0.1:8099 flutter test test/core test/perf test/e2e` | **127 passed, 0 failed** (exit 0) | `67e8950` + wipe/dispose fixes in `1973769` (lifecycle test re-run: pass) |
+| Mobile analyzer | `flutter analyze` | **0 errors, 0 warnings** | `1973769` |
+| Backend | `cd fils/backend && .venv/bin/pytest` | **68 passed** | `1973769` |
+| Backend lint | `ruff check .` | All checks passed | — |
+| Mobile CI tests on GitHub | `flutter test` (E2E skipped without a backend) | see §4 | — |
+
+New regression suites added this round, all passing:
+
+| Area | Test file | What it proves |
 |---|---|---|
-| Static analysis | `flutter analyze` | 0 errors, 0 warnings (about 30 style infos) |
-| Unit, widget, perf and live E2E | `FILS_E2E_API=http://127.0.0.1:8099 flutter test test/core test/perf test/e2e` | **102 passed, 0 failed** |
-| Parser fixtures (synthetic) | `test/core/parser_fixtures_test.dart` | 38/38: purchases EN/AR, Arabic digits, balance before amount, salary, transfers, ATM, declined, FX, refund, reversal, card payment, pending, installment, fee, processor, OTP rejection ×2, balance-only, promo, unknown → review, precision reject, injection text |
-| Ledger invariants I1–I9 | `ledger_test.dart` | 10/10 |
-| Ingestion and dedupe | `ingestion_test.dart` | 17/17: SMS+notification, replay, genuine repeats kept, Wallet+SMS, pending→settled, reversal voids, refund link, declined, ATM, transfer-leg merge, FX, review and retention purge |
-| Voice parser | `voice_parser_test.dart` | 17/17, including «دفعت خمسة دنانير وربع على طلبات» → KWD 5.250 · Talabat |
-| Assistant tools | `assistant_test.dart` | 6/6: Arabic merchant query, payday with cycle day 25, goal months, injection-safe, unknown → no invented numbers |
-| Sync (fake server) | `sync_test.dart` | 4/4 |
-| **App ↔ real backend E2E** | `test/e2e/backend_sync_e2e_test.dart` | 1/1, covering demo sign-in, `consent_required` before consent, a push of 13 entity types with no server rejections, pull on a second device, matching balances, conflict then resolve, tombstone, voice/AI consent then 503/disabled |
-| Encryption at rest | `encryption_test.dart` | 1/1: no plaintext in the file, no key fails, wrong key fails, right key reads |
-| CSV, sanitizer, recurrence | `csv_sanitizer_recurrence_test.dart` | 7/7 |
+| Household privacy and revocation | `test/e2e/household_e2e_test.dart` (two real users, live backend), `test/core/household_migration_test.dart` | Only the selected record is shared, as a field-whitelisted copy. No account, card digits, note, raw text or IDs leak. Shared copies never enter either ledger; personal totals are unchanged. Viewers can't share. Revoke propagates. Removal purges local copies. v1→v2 migration preserves data |
+| Notifications | `test/core/notifications_test.dart` | 09:00 Kuwait D-1 reminders; past reminders skipped; idempotent reschedule; delete, pause and date change cancel the old ID; budget alert once per threshold per period, surviving a restart; time-zone independent; no permission means nothing scheduled |
+| Voice TTS | `test/core/azure_tts_test.dart` | SSML injection escaped; bearer token; temp file deleted; HTTP, network or token failure falls back to device TTS; cancel during synthesis plays nothing |
+| Offline capture and restart recovery | `test/core/capture_recovery_test.dart` | Headless pipeline summary; crash before ack replays without double-posting; Wallet zero/blank values go to review; unknown or ambiguous messages never post |
+| Release isolation | `test/core/release_config_test.dart` | Production guards; production config problems detected; Play manifest has no SMS permissions; `sms` flavor matches its implementation; identifiers consistent across iOS, Android, Dart and backend; no sensitive logging |
+| Deletion/export | `test/core/lifecycle_test.dart` | Export contains the data. Wipe clears all tables (shared copies, outbox, consents) and reseeds categories |
 
-### Performance
+**Bugs found by these runs and fixed:**
+1. `wipeAll()` violated foreign keys whenever transactions existed, which broke "Erase data" and the local wipe in account deletion. Found by `lifecycle_test`.
+2. `ref` was used in `dispose()` in the Assistant and Voice screens, and teardown speech calls could throw unhandled errors. Found by the screenshot suite.
+3. The screenshot suite hung for 10 minutes per variant: the database was closed while widgets with live stream queries were mounted, and fake-async timers weren't flushed.
 
-From `test/perf/large_history_test.dart`, run on the host in a debug VM. Device numbers will differ.
+## 2. Screenshots
 
-| Measure | Target | Result |
+| Field | Value |
+|---|---|
+| Command | `FILS_SCREENSHOTS=1 FILS_EMOJI_FONT=<NotoColorEmoji.ttf> flutter test test/screenshots --update-goldens` |
+| Result | **exit 0, 4 tests (EN/AR × light/dark) passed, 40 PNGs, 0 framework exceptions**, about 47 s total |
+| Root cause of earlier timeouts | Teardown order (see bug 3). Rendering all 10 screens takes about 12 s per variant. Timeout set to 3 minutes |
+| Commit | `1973769` (the code state of this run) |
+| Output | `docs/screenshots/*.jpg` and `overview_{en,ar}_{light,dark}.jpg` |
+| Visual review | RTL mirroring correct (nav order, alignment, Arabic dates, د.ك amounts); dark-mode contrast readable; no clipping or overflow; new capture-pipeline card renders. Not covered by the demo data: the household feed (no household in demo) and permission-denied states (no platform plugins in the test host) |
+
+## 3. Builds
+
+| Build | Where | Result |
 |---|---|---|
-| Insert 20,000 transactions | < 20 s | **12.6 s** |
-| Full-history aggregation | < 300 ms | **10 ms** |
-| First 60-row page query | < 100 ms | **10 ms** |
-| Parse 1,000 messages | < 1 s | **319 ms** |
+| Android `play` debug APK | local | OK. No SMS permissions (`aapt2`) |
+| Android `sms` debug APK | local | OK. Adds only `RECEIVE_SMS` |
+| Android `play` release APK | local | OK. R8 minified, **unsigned** (no upload key) |
+| **Android test APK** `fils-0.2.0-test-arm64-profile.apk` | local | OK. Profile build, **signed with the Android SDK debug keystore** (`CN=Android Debug`, SHA-256 `2538ae05…73db`), FILS_ENV=development, offline, compileSdk 37 / targetSdk 36 |
+| iOS device build (no codesign) | GitHub Actions macos-15 | see §4 |
+| iOS simulator build | GitHub Actions macos-15 | see §4 |
+| Bicep `main.bicep` + 2 param files | local Bicep 0.31.92 + CI `infra-validate` | **Compile OK, 0 warnings**. Param files correctly fail without `FILS_PG_ADMIN_PASSWORD`. CI run `45068424926`: success |
 
-### Screenshots
+## 4. CI results (GitHub Actions)
 
-- **Command:** `FILS_SCREENSHOTS=1 flutter test test/screenshots --update-goldens`
-- **Output:** 40 renders, 10 screens × EN/AR × light/dark, published to `docs/screenshots/` (overview sheets: `overview_*.jpg`).
-- **Issues found during visual review and fixed:**
-  - Missing glyphs.
-  - Inflated net-worth baseline.
-  - Store plugin connecting in dev builds.
-  - Ink hidden in cards: `FCard` reworked to paint with Material.
-- **Run status:** earlier runs ended with "[E]" from the default 10-minute test timeout *after* all goldens were written. The timeout is now 40 minutes.
+**Run [`45069143801`](https://github.com/AhmedEwis/AhmedEwis/actions/runs/45069143801), commit `1973769`: all jobs succeeded.**
 
-## Android builds
+| Job / step | Result | Evidence from the log |
+|---|---|---|
+| test-android: `flutter analyze` | success | — |
+| test-android: `flutter test` | success | E2E skipped (no backend in CI) |
+| test-android: debug APK `play` | success | — |
+| test-android: release-config check (`aapt2`: no SMS permissions) | success | — |
+| test-android: release APK (unsigned) | success | APKs uploaded as the `android-apks` artifact |
+| **build-ios: device build** (`flutter build ios --release --no-codesign`) | **success** | `✓ Built build/ios/iphoneos/Runner.app (29.3MB)` on macOS 15.8.2 (macos-15-arm64) |
+| **build-ios: Share Extension embedded + entitlements** | **success** | `Share extension OK` (`PlugIns/ShareExtension.appex` present, `com.apple.share-services`, `group.kw.fils` in both entitlements files) |
+| **build-ios: simulator build** (`flutter build ios --simulator --debug`) | **success** | `✓ Built build/ios/iphonesimulator/Runner.app` |
+| infra-validate (run `45068424926`) | success | Bicep compile with no warnings, param files, missing-secret failure check |
+| security (gitleaks, dependency review) | success | — |
 
-| Build | Result |
-|---|---|
-| `flutter build apk --debug --flavor play` | OK. Permissions: INTERNET, RECORD_AUDIO, USE_BIOMETRIC, POST_NOTIFICATIONS, BILLING. **No SMS permission.** `FilsNotificationListener` declared with BIND_NOTIFICATION_LISTENER_SERVICE. `libsqlite3mc.so` bundled for arm64-v8a, armeabi-v7a and x86_64 |
-| `flutter build apk --debug --flavor sms` | OK. Package `kw.fils.fils.sms`, adds `RECEIVE_SMS` only |
-| `flutter build apk --release --flavor play` | OK. 73 MB, R8 minified. **Unsigned** (no upload key configured) |
+Earlier, the iOS build of the round-1 code (run `45063252369`, commit `fe81cdd`) also succeeded: `✓ Built build/ios/iphoneos/Runner.app (28.4MB)`.
 
-The builds needed retries because of Maven Central HTTP 429 rate-limiting through the proxy.
+**What the CI iOS results do NOT prove:**
+- **Runtime behavior.** Not exercised: App Intent execution in Shortcuts, headless engine start inside an intent, Share Extension UI, Keychain access while locked, notification delivery.
+- **Signed builds.** No signing identity was used.
+- **App Store compliance review.**
 
-**iOS:** not built. That needs macOS and Xcode, and is configured in `.github/workflows/mobile-ci.yml` on `macos-15`. The Swift code has **not been compiled**.
+These remain device or credential items.
 
-## Backend (`fils/backend`)
-
-| Suite | Result |
-|---|---|
-| `pytest` (real PostgreSQL) | **68 passed** |
-| `ruff check .` | All checks passed |
-| bandit (high) / pip-audit | No findings, as reported by the infra agent run |
-| Alembic upgrade, downgrade and re-upgrade | Verified |
-| Restore drill (`scripts/restore_drill.sh`) | PASSED: row counts match on 20 tables |
-| Docker image | Built; `/healthz` and `/readyz` OK, running as uid 10001 |
-
-## Not tested (and why)
-
-- **Real-device behavior** (Shortcuts automation, lock-state behavior, notification redaction, process restarts, permission revocation): no hardware.
-- **iOS compile:** no macOS.
-- **Real bank message formats:** no consented samples.
-- **Apple/Google sign-in with real tokens, StoreKit/Play purchases, Azure OpenAI/Speech:** no credentials.
-- **Bicep compile and Azure deploy:** Bicep CLI download blocked; no Azure subscription access.
-- **GitHub Actions workflows:** never executed; YAML parses.
+The final handoff commit (version bump and docs) re-runs the same workflow. Its run ID is reported in the handoff message.

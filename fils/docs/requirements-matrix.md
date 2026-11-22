@@ -27,7 +27,7 @@ Paths: `M/` is `fils/mobile/`, `B/` is `fils/backend/`.
 
 | Requirement | Implementation | Evidence | Status | Blocker |
 |---|---|---|---|---|
-| Flutter + native Swift/Kotlin | `M/ios/Runner/AppDelegate.swift`, `M/android/app/src/main/kotlin/...` | Android APK build (see test-results) | Implemented | iOS build needs macOS/Xcode |
+| Flutter + native Swift/Kotlin | `M/ios/Runner/*.swift`, `M/ios/ShareExtension/`, `M/android/app/src/{main,sms}/kotlin/...` | Android APKs built locally and in CI; **iOS compiled in CI (macos-15)** | Implemented, compile-checked | Device runtime |
 | Encrypted local DB | sqlite3mc via `hooks.user_defines`, key in Keychain/Keystore (`M/lib/data/db/open.dart`) | `test/core/encryption_test.dart` | Automated-tested (Linux host build) | On-device check |
 | Offline-first core | All features work on the local DB; cloud is optional | Every unit test runs without a network | Automated-tested | — |
 | FastAPI + Postgres + durable worker | `B/fils_api/*`, `B/alembic`, `python -m fils_api.worker` | 68 backend tests on real Postgres | Automated-tested | — |
@@ -42,14 +42,14 @@ Paths: `M/` is `fils/mobile/`, `B/` is `fils/backend/`.
 
 | Requirement | Implementation | Evidence | Status | Blocker |
 |---|---|---|---|---|
-| iOS App Intent (message text and sender) | `ImportBankTransactionIntent` in `AppDelegate.swift`. Writes to an App Group inbox with `completeUntilFirstUserAuthentication` | Code only | Implemented | **Real iPhone + Shortcuts personal automation test** |
+| iOS App Intent (message text and sender) | `ImportBankTransactionIntent` → secure inbox → **headless Flutter engine** (`HeadlessCapture.swift` + `lib/capture_main.dart`) posts to the encrypted ledger; the dialog reports the real outcome | CI macOS compile; `capture_recovery_test` (headless pipeline, crash replay) | Implemented, compile-checked, Dart-tested | **Real iPhone + Shortcuts automation; locked-device behavior** |
 | iOS onboarding guide + test action | `M/lib/features/capture/capture_screen.dart`, `FilsTestCaptureIntent` | Screenshot | Implemented | Device |
-| iOS Wallet transaction adapter | `ImportWalletTransactionIntent` (merchant/amount/card strings), dedupe against SMS | `ingestion_test` "Wallet + bank SMS merge" | Automated-tested (Dart side) | Which fields the trigger actually provides must be verified on iOS 17+ |
-| Share extension (iOS) | Not built. iOS sharing uses paste instead | — | **Not implemented** | Needs an Xcode extension target |
-| Android NotificationListenerService + allowlist | `FilsNotificationListener.kt`. Filters before reading; messaging apps blocked | APK compiles | Implemented | Device test: redaction, lock screen, restart |
+| iOS Wallet transaction adapter | `ImportWalletTransactionIntent` (merchant/amount/card/name, all optional); returns immediately (timeouts reported by Apple forums); zero or blank → review | `ingestion_test`, `capture_recovery_test`; contract documented in `docs/capture-runtime.md` | Automated-tested (Dart) | Field contract is community-reported, not in Apple docs: **device verification required** |
+| Share extension (iOS) | `ios/ShareExtension/` target (added by `ios/scripts/add_share_extension.rb`). Writes to the shared App Group inbox (`CaptureInbox.swift`); hash-based platform ID dedupes | CI macOS build checks that `ShareExtension.appex` is embedded; Dart replay dedupe tested | Implemented, compile-checked in CI | Device test from Messages' share sheet |
+| Android NotificationListenerService + allowlist | `FilsNotificationListener.kt` (filters before reading; messaging apps blocked) → `HeadlessCaptureRunner.kt` processes without the UI | APK compiles; aapt permission check | Implemented | Device test: redaction, lock screen, process death |
 | Android SMS (policy-compliant) | `sms` flavor only (`src/sms/`); the `play` flavor has no SMS permission | Manifest review | Implemented | Google Play Permissions Declaration approval |
 | Paste / Android share / CSV import | Capture screen, `MainActivity` share intent, `csv_import.dart` | `csv_import_test`, ingestion | Automated-tested | — |
-| PDF/image statements | Backend job `/v1/ingest/document` (CSV and PDF text; image OCR provider) | Backend tests | Implemented (server) | **Mobile upload UI isn't wired**; Document Intelligence credentials |
+| PDF/image statements | Backend job `/v1/ingest/document`; mobile upload + preview + duplicate-safe import (`capture_screen.dart`) | Backend tests | Implemented | Document Intelligence credentials for images; device test |
 | Bank adapter registry + coverage matrix | `bank_registry.dart`; in-app coverage card | Fixtures labeled SYNTHETIC | Synthetic-tested only | **Real sanitized samples per bank** |
 | Sanitized sample submission (opt-in, preview) | `sanitizer.dart`, review screen, `/v1/samples` | `sanitizer_test` | Automated-tested | — |
 
@@ -78,9 +78,9 @@ Paths: `M/` is `fils/mobile/`, `B/` is `fils/backend/`.
 | Recurring (confirm-only detection, never auto-posted) | `recurrence.dart` | Implemented |
 | Analytics (category, merchant, daily, cash flow, previous-period comparison) | `features/insights` | Implemented, render-tested |
 | Wealth / net worth (manual values, no double counting) | `features/wealth` | Implemented; double counting tested |
-| Household (invites, roles, revoke) | Backend + `features/household` | Server-tested; mobile UI implemented |
+| Household sharing (explicit per-record share, consent sheet, viewer read-only, revoke, purge on removal; shared copies never touch the ledger) | `data/household/household_sharing.dart`, `features/household/*`, sync `SharedRecords` (schema v2) | **Two-user E2E against the live backend** + offline unit tests + migration test |
 | Settings (language, theme, privacy, sync, export, biometrics, subscription, deletion) | `features/settings` | Implemented |
-| Local push notifications (budget/recurring reminders) | — | **Not implemented** (alerts are shown in-app only) |
+| Local notifications (bills/recurring reminders at 09:00 Kuwait, budget thresholds once per period; permission, reschedule, cancel, dedupe, time-zone safe) | `core/notifications/planner.dart`, `data/notifications/notification_service.dart` | Implemented; planner and scheduler tested (5 tests); device delivery unverified |
 
 ## Voice and AI
 
@@ -88,7 +88,7 @@ Paths: `M/` is `fils/mobile/`, `B/` is `fils/backend/`.
 |---|---|---|
 | Provider abstraction (device / Azure STT), text fallback, push-to-talk, visible recording, cancel, editable confirmation | Implemented (`speech_service.dart`, `voice_screen.dart`) | Azure Speech key/region; device test |
 | "دفعت خمسة دنانير وربع على طلبات" → KWD 5.250 | Automated-tested (17 voice cases) | — |
-| Azure neural TTS | **Not implemented**: device TTS is used | — |
+| Azure neural TTS (backend token, SSML escaping, cancellation, temp-file cleanup, device fallback) | Implemented (`data/voice/azure_tts.dart`), 5 tests | Azure Speech key/region; device audio test |
 | Assistant on typed deterministic tools; per-user; no SQL; injection-safe | Automated-tested (6 cases + server tests) | Azure OpenAI for the free-form cloud path |
 
 ## Backend, sync, billing and operations
@@ -98,6 +98,17 @@ Paths: `M/` is `fils/mobile/`, `B/` is `fils/backend/`.
 | Versioned API, OpenAPI, migrations, idempotency, ownership checks | Automated-tested (backend) | — |
 | Local-first sync (outbox, conflicts, tombstones, owner isolation) | Automated-tested: unit (fake server) **and E2E against the real backend** | — |
 | StoreKit 2 / Play Billing, server verification, webhooks, restore, dev unlock | Server tested with a self-made CA chain; client implemented | App Store Connect / Play Console products, Apple root CA file, Play service account |
-| Azure IaC, CI/CD | Written; YAML parses | `bicep build` not run (CLI download blocked); never deployed (no Azure credentials) |
+| Azure IaC, CI/CD | **Bicep compiles with 0 warnings** (locally and in CI `infra-validate`); parameter files fail without the PG secret, as intended | `what-if` and deploy need Azure credentials; not deployed |
 | Backup/restore drill | Ran locally on Postgres 16: PASSED | Azure PITR restore not exercised |
 | Threat model, privacy notice, Kuwait regulatory notes | `docs/*.md` | Kuwaiti legal review |
+
+## Release configuration (added this round)
+
+| Requirement | Evidence | Status |
+|---|---|---|
+| Production has no demo auth and no dev unlock; demo data only with an explicit flag | `release_config_test.dart` + backend `test_demo_session_404_in_production`, `test_entitlement_logic_in_production_mode` | Automated-tested |
+| Missing production secrets fail clearly | `ReleaseGuards.productionConfigProblems` (checked in `main.dart`); backend `test_production_requires_secrets`; Bicep param compile fails without the secret (CI) | Automated-tested |
+| Play build has no SMS permissions; `sms` flavor matches its implementation | Static manifest test + CI `aapt2` check on the built APK | Automated-tested |
+| No raw text, tokens or audio in logs | Static source scan test; backend `test_log_redaction` | Automated-tested |
+| Identifiers consistent (bundle IDs, App Group, package IDs, product IDs) | `release_config_test.dart` ("identifiers are consistent…") | Automated-tested |
+| Signed-build instructions | `docs/release-and-signing.md` | Documented (no credentials) |

@@ -13,7 +13,7 @@ Fils is the working name; it's configurable through `FILS_APP_NAME_EN` / `FILS_A
 
 | Path | What |
 |---|---|
-| `mobile/` | Flutter app (iOS + Android): `lib/core` (pure logic), `lib/data` (DB, sync, API), `lib/features` (screens), native code in `ios/Runner/AppDelegate.swift` and `android/app/src/{main,sms}/kotlin` |
+| `mobile/` | Flutter app (iOS + Android): `lib/core` (pure logic), `lib/data` (DB, sync, API, household, notifications, voice), `lib/features` (screens), `lib/capture_main.dart` (headless capture entrypoint). Native: `ios/Runner/*.swift` (App Intents, inbox, headless engine), `ios/ShareExtension/`, `android/app/src/{main,sms}/kotlin` |
 | `backend/` | FastAPI + PostgreSQL + worker ([backend/README.md](backend/README.md)) |
 | `fixtures/messages/v1/` | Versioned **synthetic** parser fixtures (provenance stated in the file) |
 | `infra/azure/` | Bicep IaC (Container Apps, PostgreSQL Flexible Server, Key Vault, Storage, monitoring) |
@@ -45,6 +45,20 @@ Android flavors:
 
 ## Status
 
-See [docs/requirements-matrix.md](docs/requirements-matrix.md) and [docs/test-results.md](docs/test-results.md).
+- **Requirements matrix:** [docs/requirements-matrix.md](docs/requirements-matrix.md)
+- **Verification:** [docs/test-results.md](docs/test-results.md)
+- **Capture runtime:** [docs/capture-runtime.md](docs/capture-runtime.md)
+- **Release and signing:** [docs/release-and-signing.md](docs/release-and-signing.md)
+- **Bank coverage:** [docs/bank-samples.md](docs/bank-samples.md)
+- **Resume point:** [docs/CHECKPOINT.md](docs/CHECKPOINT.md)
 
-**Nothing has been verified on a physical device yet. No bank format has been verified with real messages yet.**
+**Verified:**
+- Unit, integration and live-backend E2E tests pass.
+- Android APKs build.
+- iOS (app plus Share Extension) compiles on GitHub Actions macOS.
+- Bicep compiles.
+
+**Not yet verified:**
+- **Nothing has run on a physical device.**
+- **No bank format has been verified with real messages.** All six adapters are synthetic-tested only.
+- Nothing has been deployed to Azure.
