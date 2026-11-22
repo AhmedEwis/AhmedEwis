@@ -1,0 +1,5 @@
+// Per-environment identifiers (no secrets). Override in CI with xcodebuild settings or by
+// editing this file for your Apple/Google projects.
+// Google Sign-In: iOS OAuth client id and its reversed form (URL scheme).
+FILS_GOOGLE_IOS_CLIENT_ID = REPLACE_ME.apps.googleusercontent.com
+FILS_GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.REPLACE_ME

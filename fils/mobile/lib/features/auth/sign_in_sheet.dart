@@ -61,7 +61,7 @@ class _SignInPanelState extends ConsumerState<SignInPanel> {
           FilledButton.icon(onPressed: busy || !api.configured ? null : () => _run(auth.signInWithApple), icon: const Icon(Icons.apple), label: Text(s.signInWithApple)),
         const SizedBox(height: 10),
         OutlinedButton.icon(onPressed: busy || !api.configured ? null : () => _run(auth.signInWithGoogle), icon: const Text('G', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)), label: Text(s.signInWithGoogle)),
-        if (!AppConfig.isProduction && api.configured) ...[
+        if (AppConfig.allowDemoSession && api.configured) ...[
           const SizedBox(height: 10),
           // Development/staging only. The server also refuses demo sessions in production.
           TextButton(onPressed: busy ? null : () => _run(api.demoSession), child: Text(s.ar ? 'جلسة تجريبية (تطوير فقط)' : 'Demo session (development only)')),

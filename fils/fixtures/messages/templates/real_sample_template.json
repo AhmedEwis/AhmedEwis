@@ -1,0 +1,18 @@
+{
+  "fixture_set": "real_<bank_id>",
+  "version": 1,
+  "provenance": "REAL-SAMPLE: sanitized messages contributed with consent. Replace with: who provided them (role, not name), date range received, collection method (in-app sample submission | manual), consent reference.",
+  "bank_id": "nbk|kfh|boubyan|gulfbank|cbk|warba",
+  "consent_ref": "e.g. sample-submission ids or signed consent form reference",
+  "received_at_default": "2026-11-22T12:00:00Z",
+  "cases": [
+    {
+      "id": "real-<bank>-<kind>-001",
+      "channel": "sms|app_notification|apple_business_chat",
+      "sender": "exact sender id as shown on the phone",
+      "language": "en|ar|mixed",
+      "text": "PASTE THE SANITIZED MESSAGE (run it through the app's sample sanitizer first: no full card/account numbers, OTPs, names, phones, IBANs)",
+      "expect": {"kind": "purchase", "amount": "KWD 0.000", "merchant": "", "card_last4": ""}
+    }
+  ]
+}

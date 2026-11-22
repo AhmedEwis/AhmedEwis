@@ -1,3 +1,5 @@
+import 'release_guards.dart';
+
 /// Build-time configuration via `--dart-define` (or `--dart-define-from-file=env/<env>.json`).
 /// No secrets belong here: everything below is safe to ship in the app binary.
 class AppConfig {
@@ -29,7 +31,11 @@ class AppConfig {
 
   /// Demo mode with synthetic data is available outside production builds, and in
   /// production only as the clearly labeled store-review demo.
-  static const allowDemo = bool.fromEnvironment('FILS_ALLOW_DEMO', defaultValue: true);
+  static const _allowDemoSet = bool.hasEnvironment('FILS_ALLOW_DEMO');
+  static const _allowDemoFlag = bool.fromEnvironment('FILS_ALLOW_DEMO');
+  static bool get allowDemo => ReleaseGuards.demoDataAllowed(environment, explicitFlag: _allowDemoSet ? _allowDemoFlag : null);
+  static bool get allowDemoSession => ReleaseGuards.demoSessionAllowed(environment);
+  static bool get devUnlock => ReleaseGuards.devUnlock(environment);
 
   static const privacyPolicyUrl = String.fromEnvironment('FILS_PRIVACY_URL', defaultValue: 'https://fils.example/privacy');
   static const supportUrl = String.fromEnvironment('FILS_SUPPORT_URL', defaultValue: 'https://fils.example/support');

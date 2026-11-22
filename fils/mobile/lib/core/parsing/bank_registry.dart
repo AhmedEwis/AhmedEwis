@@ -99,6 +99,11 @@ const kuwaitBanks = <BankAdapter>[
     smsSenders: [EvidencedValue('NBK', _assume)],
     androidPackages: [],
     textHints: ['nbk', 'الوطني'],
+    knownLimitations: [
+      'No real sample messages verified yet; the parser uses the generic Kuwait engine.',
+      'Sender IDs and package names are unverified assumptions.',
+      'NBK is moving customers to in-app push notifications: capture via Android notifications; iOS cannot read other apps\' notifications.',
+    ],
   ),
   BankAdapter(
     id: 'boubyan',
@@ -109,6 +114,11 @@ const kuwaitBanks = <BankAdapter>[
     smsSenders: [EvidencedValue('Boubyan', _assume), EvidencedValue('BoubyanBank', _assume)],
     androidPackages: [],
     textHints: ['boubyan', 'بوبيان'],
+    knownLimitations: [
+      'No real sample messages verified yet; the parser uses the generic Kuwait engine.',
+      'Sender IDs and package names are unverified assumptions.',
+      'Alerts may arrive via Apple Messages for Business; whether the Shortcuts Message trigger fires for them is unverified.',
+    ],
   ),
   BankAdapter(
     id: 'gulfbank',

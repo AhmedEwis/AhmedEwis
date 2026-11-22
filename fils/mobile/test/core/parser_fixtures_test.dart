@@ -5,16 +5,27 @@ import 'package:fils/core/domain/categories.dart';
 import 'package:fils/core/parsing/kuwait_parser.dart';
 import 'package:fils/core/parsing/merchant_directory.dart';
 import 'package:fils/core/parsing/models.dart';
+import 'package:fils/core/parsing/sanitizer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final file = File('../fixtures/messages/v1/synthetic_kw.json');
+  // Every fixture file is tested: synthetic sets and (when added) real sanitized samples.
+  final files = Directory('../fixtures/messages/v1').listSync().whereType<File>().where((f) => f.path.endsWith('.json')).toList()..sort((a, b) => a.path.compareTo(b.path));
+  for (final file in files) {
+    _runFile(file);
+  }
+}
+
+void _runFile(File file) {
   final data = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
   final defaultReceived = DateTime.parse(data['received_at_default'] as String);
   const parser = KuwaitParser();
+  final provenance = data['provenance'] as String;
+  final real = provenance.startsWith('REAL-SAMPLE');
 
-  test('fixture provenance is labeled synthetic', () {
-    expect((data['provenance'] as String).startsWith('SYNTHETIC'), isTrue);
+  test('${file.uri.pathSegments.last}: provenance is labeled SYNTHETIC or REAL-SAMPLE', () {
+    expect(provenance.startsWith('SYNTHETIC') || real, isTrue);
+    if (real) expect((data['consent_ref'] as String?)?.isNotEmpty, isTrue, reason: 'real samples need a consent reference');
   });
 
   for (final c in (data['cases'] as List).cast<Map<String, dynamic>>()) {
@@ -43,6 +54,10 @@ void main() {
       if (e.containsKey('category')) {
         final m = matchMerchant(r.merchantRaw ?? r.merchant);
         expect(m?.category ?? Cat.other, e['category'], reason: why);
+      }
+      if (real) {
+        // Real samples must already be sanitized: re-sanitizing changes nothing.
+        expect(sanitizeMessage(c['text'] as String).removed, isEmpty, reason: 'unsanitized data in ${c['id']}');
       }
       // Evidence invariant: every evidence value is a substring of the (digit-normalized) input.
       final norm = normalizeForMatch(c['text'] as String);

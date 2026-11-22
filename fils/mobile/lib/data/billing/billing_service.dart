@@ -40,7 +40,7 @@ class BillingService {
   InAppPurchase get _iap => _iapOverride ?? InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _sub;
   final _ent = StreamController<Entitlements>.broadcast();
-  Entitlements current = AppConfig.isProduction ? Entitlements.free : Entitlements.devUnlocked;
+  Entitlements current = AppConfig.devUnlock ? Entitlements.devUnlocked : Entitlements.free;
 
   BillingService(this.api, {InAppPurchase? iap}) : _iapOverride = iap;
 
