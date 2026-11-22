@@ -1,6 +1,27 @@
 # Fils API Contract (v1)
 
 > Changes (mobile lead): transaction `kind` uses `adjust_up` and `adjust_down` for reconciliation adjustments instead of a signed `adjustment`.
+>
+> Changes (backend, as implemented):
+> 1. `POST /v1/auth/reauth` body is `{provider: "apple"|"google", token, nonce}`.
+> 2. `POST /v1/me/identities/{provider}` body is `{token, nonce}` and requires `X-Reauth`.
+> 3. `POST /v1/demo/session` body is a `DeviceInfo` object.
+> 4. `POST /v1/sync/push` returns `cursor: null`. Only `GET /v1/sync/pull` advances the cursor, because
+>    other devices' changes may interleave.
+> 5. Category ids (`category_id`, `parent_id`, `splits[].category_id`) may be a UUID or a built-in
+>    system slug matching `^[a-z][a-z0-9_]{1,39}$` (for example `transfers` or `food`). Slugs are never
+>    synced as records, are assumed to exist on every device, and skip the server reference check.
+>    Envelope `id`s are always UUIDs.
+> 6. `GET /v1/jobs/{id}` also returns `result` (candidate rows) for `document_extract` jobs, and
+>    `result_url` (`/v1/jobs/{id}/download`, authenticated) for exports. Candidate rows:
+>    `{occurred_on, description, amount_minor, currency, direction: debit|credit, needs_review}`.
+> 7. Sync payloads reject unknown fields (`extra=forbid`), so the result is `rejected` with
+>    `invalid_payload` and never a silent drop.
+> 8. `POST /v1/samples` returns `{id, stored_text}`: the text after the server's second sanitization pass.
+> 9. `GET /v1/households` items are `{id, name, owner_user_id, my_role, members: [{user_id, role, display_name, joined_at}]}`.
+> 10. Billing: the Apple `appAccountToken` must equal the user id (UUID). The Google
+>     `obfuscatedExternalAccountId` must equal `sha256_hex(user_id)`. `restore` also returns
+>     `restore_errors: [code]`.
 
 This is the contract between the Flutter app (`fils/mobile`) and the backend (`fils/backend`).
 The backend's generated OpenAPI at `/v1/openapi.json` is the authoritative version. This file

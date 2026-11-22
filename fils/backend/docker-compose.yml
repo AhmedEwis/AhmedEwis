@@ -1,0 +1,36 @@
+# Local development only. Not for production (secrets are dev placeholders).
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: fils
+      POSTGRES_PASSWORD: fils
+      POSTGRES_DB: fils
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fils"]
+      interval: 5s
+      retries: 10
+  migrate:
+    build: .
+    command: ["alembic", "upgrade", "head"]
+    environment: &env
+      FILS_ENV: development
+      FILS_DATABASE_URL: postgresql+psycopg://fils:fils@postgres:5432/fils
+    depends_on:
+      postgres: {condition: service_healthy}
+  api:
+    build: .
+    environment: *env
+    ports: ["8000:8000"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+  worker:
+    build: .
+    command: ["python", "-m", "fils_api.worker"]
+    environment: *env
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+volumes:
+  pgdata:

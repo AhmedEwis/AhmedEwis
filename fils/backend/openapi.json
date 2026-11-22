@@ -1,0 +1,2114 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Fils API",
+    "description": "Backend for the Fils personal-finance app (Kuwait). Money is integer minor units.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/healthz": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Healthz",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/readyz": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Readyz",
+        "operationId": "readyz_readyz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/nonce": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Create Nonce",
+        "operationId": "create_nonce_v1_auth_nonce_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/apple": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Sign In Apple",
+        "operationId": "sign_in_apple_v1_auth_apple_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppleSignIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/google": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Sign In Google",
+        "operationId": "sign_in_google_v1_auth_google_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleSignIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Refresh",
+        "operationId": "refresh_v1_auth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logout",
+        "operationId": "logout_v1_auth_logout_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/reauth": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Reauth",
+        "operationId": "reauth_v1_auth_reauth_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReauthIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/identities/{provider}": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Link Identity",
+        "operationId": "link_identity_v1_me_identities__provider__post",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "apple",
+                "google"
+              ],
+              "type": "string",
+              "title": "Provider"
+            }
+          },
+          {
+            "name": "X-Reauth",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Reauth"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/demo/session": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Demo Session",
+        "operationId": "demo_session_v1_demo_session_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceInfo"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "tags": [
+          "me"
+        ],
+        "summary": "Me",
+        "operationId": "me_v1_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "me"
+        ],
+        "summary": "Delete Account",
+        "operationId": "delete_account_v1_me_delete",
+        "parameters": [
+          {
+            "name": "X-Reauth",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Reauth"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/sessions": {
+      "get": {
+        "tags": [
+          "me"
+        ],
+        "summary": "Sessions",
+        "operationId": "sessions_v1_me_sessions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/sessions/{session_id}": {
+      "delete": {
+        "tags": [
+          "me"
+        ],
+        "summary": "Revoke Session",
+        "operationId": "revoke_session_v1_me_sessions__session_id__delete",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/consents": {
+      "get": {
+        "tags": [
+          "me"
+        ],
+        "summary": "Get Consents",
+        "operationId": "get_consents_v1_me_consents_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "me"
+        ],
+        "summary": "Post Consent",
+        "operationId": "post_consent_v1_me_consents_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/export": {
+      "post": {
+        "tags": [
+          "me"
+        ],
+        "summary": "Start Export",
+        "operationId": "start_export_v1_me_export_post",
+        "parameters": [
+          {
+            "name": "X-Reauth",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Reauth"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "me"
+        ],
+        "summary": "Get Job",
+        "operationId": "get_job_v1_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/{job_id}/download": {
+      "get": {
+        "tags": [
+          "me"
+        ],
+        "summary": "Download Job",
+        "operationId": "download_job_v1_jobs__job_id__download_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sync/push": {
+      "post": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Push",
+        "operationId": "push_v1_sync_push_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sync/pull": {
+      "get": {
+        "tags": [
+          "sync"
+        ],
+        "summary": "Pull",
+        "operationId": "pull_v1_sync_pull_get",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 500,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ingest/extract": {
+      "post": {
+        "tags": [
+          "ingest"
+        ],
+        "summary": "Extract",
+        "operationId": "extract_v1_ingest_extract_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtractIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ingest/document": {
+      "post": {
+        "tags": [
+          "ingest"
+        ],
+        "summary": "Upload Document",
+        "operationId": "upload_document_v1_ingest_document_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_document_v1_ingest_document_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/samples": {
+      "post": {
+        "tags": [
+          "ingest"
+        ],
+        "summary": "Submit Sample",
+        "operationId": "submit_sample_v1_samples_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SampleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/assistant/turn": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Assistant Turn",
+        "operationId": "assistant_turn_v1_assistant_turn_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TurnIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/voice/config": {
+      "get": {
+        "tags": [
+          "voice"
+        ],
+        "summary": "Voice Config",
+        "operationId": "voice_config_v1_voice_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/voice/token": {
+      "post": {
+        "tags": [
+          "voice"
+        ],
+        "summary": "Voice Token",
+        "operationId": "voice_token_v1_voice_token_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/households": {
+      "get": {
+        "tags": [
+          "households"
+        ],
+        "summary": "List Households",
+        "operationId": "list_households_v1_households_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "households"
+        ],
+        "summary": "Create Household",
+        "operationId": "create_household_v1_households_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HouseholdIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/households/{household_id}/invitations": {
+      "post": {
+        "tags": [
+          "households"
+        ],
+        "summary": "Invite",
+        "operationId": "invite_v1_households__household_id__invitations_post",
+        "parameters": [
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/households/join": {
+      "post": {
+        "tags": [
+          "households"
+        ],
+        "summary": "Join",
+        "operationId": "join_v1_households_join_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/households/{household_id}/members/{user_id}": {
+      "delete": {
+        "tags": [
+          "households"
+        ],
+        "summary": "Remove Member",
+        "operationId": "remove_member_v1_households__household_id__members__user_id__delete",
+        "parameters": [
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/households/{household_id}/invitations/{invitation_id}": {
+      "delete": {
+        "tags": [
+          "households"
+        ],
+        "summary": "Revoke Invitation",
+        "operationId": "revoke_invitation_v1_households__household_id__invitations__invitation_id__delete",
+        "parameters": [
+          {
+            "name": "household_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Household Id"
+            }
+          },
+          {
+            "name": "invitation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Invitation Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/billing/products": {
+      "get": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Products",
+        "operationId": "products_v1_billing_products_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/billing/apple/verify": {
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Apple Verify",
+        "operationId": "apple_verify_v1_billing_apple_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppleVerifyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/webhooks/apple": {
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Apple Webhook",
+        "operationId": "apple_webhook_v1_webhooks_apple_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/billing/google/verify": {
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Google Verify",
+        "operationId": "google_verify_v1_billing_google_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleVerifyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/billing/restore": {
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Restore",
+        "operationId": "restore_v1_billing_restore_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/webhooks/google": {
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Google Webhook",
+        "operationId": "google_webhook_v1_webhooks_google_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AppleSignIn": {
+        "properties": {
+          "identity_token": {
+            "type": "string",
+            "maxLength": 8192,
+            "title": "Identity Token"
+          },
+          "nonce": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 16,
+            "title": "Nonce"
+          },
+          "authorization_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1024
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authorization Code"
+          },
+          "device": {
+            "$ref": "#/components/schemas/DeviceInfo"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "identity_token",
+          "nonce",
+          "device"
+        ],
+        "title": "AppleSignIn"
+      },
+      "AppleVerifyIn": {
+        "properties": {
+          "signed_transaction": {
+            "type": "string",
+            "maxLength": 20000,
+            "title": "Signed Transaction"
+          }
+        },
+        "type": "object",
+        "required": [
+          "signed_transaction"
+        ],
+        "title": "AppleVerifyIn"
+      },
+      "Body_upload_document_v1_ingest_document_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_document_v1_ingest_document_post"
+      },
+      "ConsentIn": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "cloud_backup",
+              "cloud_sync",
+              "cloud_ai",
+              "cloud_voice",
+              "sample_submission",
+              "analytics",
+              "marketing"
+            ],
+            "title": "Kind"
+          },
+          "granted": {
+            "type": "boolean",
+            "title": "Granted"
+          },
+          "policy_version": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Policy Version"
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "Source",
+            "default": "app"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "granted",
+          "policy_version"
+        ],
+        "title": "ConsentIn"
+      },
+      "DeviceInfo": {
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Device Id"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "ios",
+              "android"
+            ],
+            "title": "Platform"
+          },
+          "app_version": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "App Version"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "device_id",
+          "platform",
+          "app_version"
+        ],
+        "title": "DeviceInfo"
+      },
+      "ExtractIn": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "sender": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sender"
+          },
+          "locale_hint": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locale Hint"
+          },
+          "received_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "ExtractIn"
+      },
+      "GoogleSignIn": {
+        "properties": {
+          "id_token": {
+            "type": "string",
+            "maxLength": 8192,
+            "title": "Id Token"
+          },
+          "nonce": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 16,
+            "title": "Nonce"
+          },
+          "device": {
+            "$ref": "#/components/schemas/DeviceInfo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id_token",
+          "nonce",
+          "device"
+        ],
+        "title": "GoogleSignIn"
+      },
+      "GoogleVerifyIn": {
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "maxLength": 120,
+            "title": "Product Id"
+          },
+          "purchase_token": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Purchase Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_id",
+          "purchase_token"
+        ],
+        "title": "GoogleVerifyIn"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HouseholdIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "HouseholdIn"
+      },
+      "InviteIn": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "member",
+              "viewer"
+            ],
+            "title": "Role",
+            "default": "member"
+          },
+          "expires_in_hours": {
+            "type": "integer",
+            "maximum": 336.0,
+            "minimum": 1.0,
+            "title": "Expires In Hours",
+            "default": 72
+          }
+        },
+        "type": "object",
+        "title": "InviteIn"
+      },
+      "JoinIn": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 6,
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "JoinIn"
+      },
+      "LinkIn": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 8192,
+            "title": "Token"
+          },
+          "nonce": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 16,
+            "title": "Nonce"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "nonce"
+        ],
+        "title": "LinkIn"
+      },
+      "Msg": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant",
+              "tool"
+            ],
+            "title": "Role"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 12000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Call Id"
+          },
+          "tool_calls": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ToolCall"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Calls"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "title": "Msg"
+      },
+      "PushIn": {
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Device Id"
+          },
+          "ops": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "title": "Ops"
+          }
+        },
+        "type": "object",
+        "required": [
+          "device_id",
+          "ops"
+        ],
+        "title": "PushIn"
+      },
+      "ReauthIn": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "apple",
+              "google"
+            ],
+            "title": "Provider"
+          },
+          "token": {
+            "type": "string",
+            "maxLength": 8192,
+            "title": "Token"
+          },
+          "nonce": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 16,
+            "title": "Nonce"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "token",
+          "nonce"
+        ],
+        "title": "ReauthIn"
+      },
+      "RefreshIn": {
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "maxLength": 256,
+            "title": "Refresh Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshIn"
+      },
+      "RestoreIn": {
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "ios",
+              "android"
+            ],
+            "title": "Platform"
+          },
+          "signed_transactions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Signed Transactions"
+          },
+          "purchase_tokens": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Purchase Tokens"
+          }
+        },
+        "type": "object",
+        "required": [
+          "platform"
+        ],
+        "title": "RestoreIn"
+      },
+      "SampleIn": {
+        "properties": {
+          "bank_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Id"
+          },
+          "sender": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sender"
+          },
+          "sanitized_text": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Sanitized Text"
+          },
+          "kind_hint": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind Hint"
+          },
+          "app_version": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "App Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sanitized_text",
+          "app_version"
+        ],
+        "title": "SampleIn"
+      },
+      "ToolCall": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Name"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Arguments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ToolCall"
+      },
+      "ToolDef": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Description"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parameters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameters"
+        ],
+        "title": "ToolDef"
+      },
+      "TurnIn": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "ar",
+              "en"
+            ],
+            "title": "Locale",
+            "default": "ar"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/Msg"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Messages"
+          },
+          "tools": {
+            "items": {
+              "$ref": "#/components/schemas/ToolDef"
+            },
+            "type": "array",
+            "maxItems": 32,
+            "title": "Tools"
+          },
+          "context": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "messages"
+        ],
+        "title": "TurnIn"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
