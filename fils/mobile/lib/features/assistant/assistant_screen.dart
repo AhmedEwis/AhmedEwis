@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../app/services.dart';
+import '../../data/voice/speech_service.dart';
 import '../../core/assistant/local_assistant.dart';
 import '../../core/assistant/tools.dart';
 import '../../data/store.dart';
@@ -34,9 +35,17 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
   bool listening = false;
   int? speakingIndex;
 
+  SpeechProvider? _speech; // cached: `ref` must not be used in dispose()
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _speech = ref.read(speechProvider);
+  }
+
   @override
   void dispose() {
-    ref.read(speechProvider).stopSpeaking();
+    _speech?.stopSpeaking().catchError((_) {}); // best-effort on teardown
     super.dispose();
   }
 

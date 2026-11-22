@@ -55,7 +55,7 @@ jobs:
           retention-days: 14
   build-ios:
     runs-on: macos-15
-    needs: test-android
+    # Independent of the Android job so iOS compile results are always reported.
     defaults: { run: { working-directory: fils/mobile } }
     steps:
       - uses: actions/checkout@v4

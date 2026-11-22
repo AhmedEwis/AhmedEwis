@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../app/services.dart';
+import '../../data/voice/speech_service.dart';
 import '../../core/ledger/ledger.dart';
 import '../../core/voice/voice_parser.dart';
 import '../../l10n/strings.dart';
@@ -28,10 +29,19 @@ class _VoiceScreenState extends ConsumerState<VoiceScreen> with SingleTickerProv
   final textCtrl = TextEditingController();
   late final AnimationController pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat(reverse: true);
 
+  SpeechProvider? _speech; // cached: `ref` must not be used in dispose()
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _speech = ref.read(speechProvider);
+  }
+
   @override
   void dispose() {
     pulse.dispose();
-    ref.read(speechProvider).cancel();
+    // Leaving the screen always releases the microphone (no hidden recording).
+    _speech?.cancel().catchError((_) {}); // best-effort on teardown
     super.dispose();
   }
 

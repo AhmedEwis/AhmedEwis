@@ -638,8 +638,13 @@ class FinanceStore {
   /// Wipe all local financial data (logout with "remove data", or account deletion).
   Future<void> wipeAll() async {
     await db.transaction(() async {
-      for (final t in db.allTables) {
+      // Children before parents (foreign keys are enforced), then everything else.
+      final ordered = <TableInfo>[db.transactionSplits, db.goalContributions, db.transactions, db.goals, db.accounts];
+      for (final t in ordered) {
         await db.delete(t).go();
+      }
+      for (final t in db.allTables) {
+        if (!ordered.contains(t)) await db.delete(t).go();
       }
     });
     await ensureSeeded();
