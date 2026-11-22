@@ -9,6 +9,7 @@ import '../data/auth/auth_service.dart';
 import '../data/billing/billing_service.dart';
 import '../data/db/database.dart';
 import '../data/household/household_sharing.dart';
+import '../data/notifications/notification_service.dart';
 import '../data/ingestion.dart';
 import '../data/store.dart';
 import '../data/sync/sync_engine.dart';
@@ -105,3 +106,6 @@ final householdsCacheProvider = StreamProvider<List<HouseholdInfo>>((ref) {
   return store.watchSetting('households_cache').asyncMap((_) => sharing.cachedHouseholds());
 });
 final sharedOriginalsProvider = StreamProvider<Set<String>>((ref) => ref.watch(householdSharingProvider).watchSharedOriginals());
+
+final notificationPortProvider = Provider<NotificationPort>((ref) => PluginNotificationPort());
+final notificationSchedulerProvider = Provider<NotificationScheduler>((ref) => NotificationScheduler(ref.watch(storeProvider), ref.watch(notificationPortProvider)));

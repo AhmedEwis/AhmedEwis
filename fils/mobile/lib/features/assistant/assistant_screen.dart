@@ -32,6 +32,13 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
   final scroll = ScrollController();
   bool busy = false;
   bool listening = false;
+  int? speakingIndex;
+
+  @override
+  void dispose() {
+    ref.read(speechProvider).stopSpeaking();
+    super.dispose();
+  }
 
   Future<void> _ask(String q) async {
     if (q.trim().isEmpty || busy) return;
@@ -136,7 +143,27 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                             Padding(padding: const EdgeInsets.only(bottom: 10), child: _SpendCard(result: r)),
                           SelectableText(m.text, style: context.tt.bodyLarge),
                           const SizedBox(height: 4),
-                          Text(m.onDevice ? s.assistantOffline : s.assistantCloud, style: context.tt.bodySmall?.copyWith(color: p.inkTertiary)),
+                          Row(children: [
+                            Expanded(child: Text(m.onDevice ? s.assistantOffline : s.assistantCloud, style: context.tt.bodySmall?.copyWith(color: p.inkTertiary))),
+                            IconButton(
+                              tooltip: speakingIndex == i ? s.stop : (s.ar ? 'اقرأ بصوت عالٍ' : 'Read aloud'),
+                              icon: Icon(speakingIndex == i ? Icons.stop_circle_outlined : Icons.volume_up_outlined, size: 20),
+                              onPressed: () async {
+                                final sp = ref.read(speechProvider);
+                                if (speakingIndex == i) {
+                                  await sp.stopSpeaking();
+                                  setState(() => speakingIndex = null);
+                                  return;
+                                }
+                                setState(() => speakingIndex = i);
+                                try {
+                                  await sp.speak(m.text, locale: s.ar ? 'ar-KW' : 'en-US');
+                                } finally {
+                                  if (mounted) setState(() => speakingIndex = null);
+                                }
+                              },
+                            ),
+                          ]),
                         ]),
                       );
                     },

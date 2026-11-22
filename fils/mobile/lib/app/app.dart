@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:cupertino_ui/cupertino_ui.dart' show GlobalCupertinoLocalizations;
 import 'package:flutter_localizations/flutter_localizations.dart' show GlobalWidgetsLocalizations;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:drift/drift.dart' show TableUpdateQuery;
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 
@@ -81,6 +82,8 @@ class _FilsAppState extends ConsumerState<FilsApp> with WidgetsBindingObserver {
   bool locked = false;
   bool _lockChecked = false;
   Timer? _syncTimer;
+  Timer? _notifDebounce;
+  StreamSubscription<void>? _dataSub;
 
   @override
   void initState() {
@@ -88,12 +91,29 @@ class _FilsAppState extends ConsumerState<FilsApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _onForeground(first: true));
     _syncTimer = Timer.periodic(const Duration(minutes: 10), (_) => _sync());
+    // Recompute notifications whenever transactions, budgets or recurring items change.
+    final db = ref.read(storeProvider).db;
+    _dataSub = db.tableUpdates(TableUpdateQuery.onAllTables([db.transactions, db.budgets, db.recurrings])).listen((_) {
+      _notifDebounce?.cancel();
+      _notifDebounce = Timer(const Duration(seconds: 2), _reschedule);
+    });
+  }
+
+  Future<void> _reschedule() async {
+    try {
+      final s = ref.read(settingsProvider);
+      await ref.read(notificationSchedulerProvider).reschedule(arabic: s.ar, money: s.fmt.money);
+    } catch (e) {
+      debugPrint('notifications: reschedule failed (${e.runtimeType})');
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _syncTimer?.cancel();
+    _notifDebounce?.cancel();
+    _dataSub?.cancel();
     super.dispose();
   }
 
@@ -123,6 +143,8 @@ class _FilsAppState extends ConsumerState<FilsApp> with WidgetsBindingObserver {
       }
     } catch (_) {}
     await store.purgeExpiredRawText();
+    // Time zone / date may have changed while backgrounded: recompute absolute schedules.
+    unawaited(_reschedule());
     unawaited(ref.read(billingProvider).start());
     _sync();
   }

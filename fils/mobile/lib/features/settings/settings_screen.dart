@@ -137,6 +137,43 @@ class SettingsScreen extends ConsumerWidget {
             ListTile(leading: const Icon(Icons.group_outlined), title: Text(s.household), trailing: const Icon(Icons.chevron_right), onTap: () => context.push('/household')),
           ]),
 
+          section(s.notifications),
+          group([
+            ListTile(
+              leading: const Icon(Icons.notifications_outlined),
+              title: Text(s.notifications),
+              subtitle: Text(raw['notif_permission'] == 'granted'
+                  ? s.permissionGranted
+                  : (raw['notif_permission'] == 'denied' ? (s.ar ? 'مرفوض. فعّله من إعدادات الجهاز' : 'Denied. Enable it in device settings') : s.permissionMissing)),
+              trailing: raw['notif_permission'] == 'granted'
+                  ? null
+                  : TextButton(
+                      onPressed: () async {
+                        await ref.read(notificationSchedulerProvider).requestPermission();
+                        await ref.read(notificationSchedulerProvider).reschedule(arabic: settings.ar, money: settings.fmt.money);
+                      },
+                      child: Text(s.ar ? 'السماح' : 'Allow')),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.event_repeat_outlined),
+              title: Text(s.ar ? 'تذكير الفواتير والالتزامات' : 'Bill & recurring reminders'),
+              value: raw['notif_bills'] != 'false',
+              onChanged: (v) async {
+                await store.setSetting('notif_bills', '$v');
+                await ref.read(notificationSchedulerProvider).reschedule(arabic: settings.ar, money: settings.fmt.money);
+              },
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.pie_chart_outline),
+              title: Text(s.ar ? 'تنبيهات تجاوز الميزانية' : 'Budget threshold alerts'),
+              value: raw['notif_budgets'] != 'false',
+              onChanged: (v) async {
+                await store.setSetting('notif_budgets', '$v');
+                await ref.read(notificationSchedulerProvider).reschedule(arabic: settings.ar, money: settings.fmt.money);
+              },
+            ),
+          ]),
+
           section(s.privacy),
           group([
             SwitchListTile(

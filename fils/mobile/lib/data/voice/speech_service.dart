@@ -9,6 +9,7 @@ import 'package:record/record.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 import '../api/api_client.dart';
+import 'azure_tts.dart';
 
 /// Speech provider abstraction: speech-to-text plus text-to-speech, with a text-only
 /// fallback. Implementations:
@@ -185,12 +186,24 @@ class AzureSpeech implements SpeechProvider {
     if (p != null && await File(p).exists()) await File(p).delete();
   }
 
-  @override
-  Future<void> speak(String text, {required String locale}) async {
-    await _tts.setLanguage(locale.startsWith('ar') ? 'ar' : 'en-US');
-    await _tts.speak(text);
-  }
+  late final AzureTts _azureTts = AzureTts(
+    token: () async {
+      await _ensureToken();
+      return (token: _token!, region: _region!);
+    },
+    // Device TTS fallback when Azure is unavailable or fails.
+    fallback: (text, locale) async {
+      await _tts.setLanguage(locale.startsWith('ar') ? 'ar' : 'en-US');
+      await _tts.speak(text);
+    },
+  );
 
   @override
-  Future<void> stopSpeaking() => _tts.stop();
+  Future<void> speak(String text, {required String locale}) => _azureTts.speak(text, locale: locale);
+
+  @override
+  Future<void> stopSpeaking() async {
+    await _azureTts.stop();
+    await _tts.stop();
+  }
 }
