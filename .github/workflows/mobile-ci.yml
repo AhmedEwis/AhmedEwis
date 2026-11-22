@@ -1,0 +1,62 @@
+name: mobile-ci
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths: ['fils/mobile/**', 'fils/fixtures/**', '.github/workflows/mobile-ci.yml']
+  pull_request:
+    paths: ['fils/mobile/**', 'fils/fixtures/**', '.github/workflows/mobile-ci.yml']
+permissions:
+  contents: read
+concurrency:
+  group: mobile-ci-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  FLUTTER_VERSION: '3.50.1'
+jobs:
+  test-android:
+    runs-on: ubuntu-24.04
+    defaults: { run: { working-directory: fils/mobile } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '${{ env.FLUTTER_VERSION }}', channel: stable, cache: true }
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test --reporter expanded
+      - name: Android debug APK (play flavor, no SMS permission)
+        run: flutter build apk --debug --flavor play --dart-define=FILS_ENV=development
+      - name: Android release APK (unsigned unless signing secrets are configured)
+        env:
+          FILS_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          FILS_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          FILS_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          FILS_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$FILS_KEYSTORE_BASE64" ]; then
+            echo "$FILS_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+            export FILS_KEYSTORE_PATH="$PWD/android/app/upload-keystore.jks"
+          fi
+          flutter build apk --release --flavor play --dart-define=FILS_ENV=staging --dart-define=FILS_API_BASE_URL=${{ vars.FILS_STAGING_API_URL }}
+          rm -f android/app/upload-keystore.jks
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apks
+          path: fils/mobile/build/app/outputs/flutter-apk/*.apk
+          retention-days: 14
+  build-ios:
+    runs-on: macos-15
+    needs: test-android
+    defaults: { run: { working-directory: fils/mobile } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '${{ env.FLUTTER_VERSION }}', channel: stable, cache: true }
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - name: iOS build (no codesign)
+        run: flutter build ios --release --no-codesign --dart-define=FILS_ENV=staging
+      # Signed TestFlight builds: add an App Store Connect API key (secrets APP_STORE_CONNECT_*)
+      # and run `flutter build ipa --export-options-plist=ios/ExportOptions.plist`; see fils/docs/store-submission.md.

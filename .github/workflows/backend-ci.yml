@@ -1,0 +1,48 @@
+name: backend-ci
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths: ['fils/backend/**', '.github/workflows/backend-ci.yml']
+  pull_request:
+    paths: ['fils/backend/**', '.github/workflows/backend-ci.yml']
+permissions:
+  contents: read
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    defaults: { run: { working-directory: fils/backend } }
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: fils, POSTGRES_PASSWORD: fils, POSTGRES_DB: fils_test }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U fils" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      FILS_ENV: test
+      FILS_DATABASE_URL: postgresql+psycopg://fils:fils@localhost:5432/fils_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.13', cache: pip, cache-dependency-path: fils/backend/requirements*.txt }
+      - run: pip install -r requirements-dev.txt ruff bandit pip-audit
+      - name: Lint (ruff)
+        run: ruff check fils_api tests
+      - name: Security lint (bandit, high severity)
+        run: bandit -q -r fils_api -lll
+      - name: Migrations upgrade/downgrade/upgrade
+        run: alembic upgrade head && alembic downgrade base && alembic upgrade head
+      - name: Tests
+        run: pytest -q
+      - name: Dependency audit
+        run: pip-audit -r requirements.txt
+  docker:
+    runs-on: ubuntu-24.04
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image (no push)
+        run: docker build -t fils-api:ci fils/backend

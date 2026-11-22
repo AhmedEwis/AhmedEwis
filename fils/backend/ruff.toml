@@ -1,0 +1,18 @@
+# Lint policy for CI. B008 is ignored because FastAPI's Depends()/Query() defaults are idiomatic.
+line-length = 140
+target-version = "py313"
+extend-exclude = ["alembic/versions"]
+
+[lint]
+select = ["E", "F", "B", "S"]
+ignore = [
+  "B008",   # FastAPI dependency defaults
+  "E501",   # long lines handled by review
+  "S101",   # asserts in tests
+  "S105", "S106", # false positives on token-type constants/test fixtures
+  "B023",   # reviewed: loop-local lambdas are called within the same iteration (services/documents.py)
+  "B904",   # style: exception chaining; tracked as a cleanup, not a defect
+]
+
+[lint.per-file-ignores]
+"tests/**" = ["S", "B"]

@@ -1,0 +1,75 @@
+name: deploy-backend
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [staging, production]
+        required: true
+permissions:
+  id-token: write   # OIDC federated credential to Azure (no stored client secret)
+  contents: read
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.environment }}   # configure required reviewers for "production" in repo settings
+    env:
+      RG: rg-fils-${{ inputs.environment }}
+      APP: fils-${{ inputs.environment }}-api
+      WORKER: fils-${{ inputs.environment }}-worker
+      JOB: fils-${{ inputs.environment }}-migrate
+      TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Build and push image to ACR
+        run: |
+          ACR=${{ vars.ACR_LOGIN_SERVER }}
+          az acr login -n "${ACR%%.*}"
+          docker build -t "$ACR/fils-api:$TAG" fils/backend
+          docker push "$ACR/fils-api:$TAG"
+      - name: Record current revision (for rollback)
+        id: prev
+        run: echo "rev=$(az containerapp revision list -g $RG -n $APP --query "[?properties.trafficWeight>\`0\`].name | [0]" -o tsv)" >> "$GITHUB_OUTPUT"
+      - name: Run database migrations (before traffic shift)
+        run: |
+          ACR=${{ vars.ACR_LOGIN_SERVER }}
+          az containerapp job update -g $RG -n $JOB --image "$ACR/fils-api:$TAG"
+          EXEC=$(az containerapp job start -g $RG -n $JOB --query name -o tsv)
+          for i in $(seq 1 60); do
+            S=$(az containerapp job execution show -g $RG -n $JOB --job-execution-name "$EXEC" --query properties.status -o tsv)
+            echo "migration: $S"
+            [ "$S" = Succeeded ] && exit 0
+            [ "$S" = Failed ] && exit 1
+            sleep 10
+          done
+          exit 1
+      - name: Deploy new API revision with 0% traffic, then verify readiness
+        run: |
+          ACR=${{ vars.ACR_LOGIN_SERVER }}
+          SUFFIX=r${TAG::7}
+          az containerapp update -g $RG -n $APP --image "$ACR/fils-api:$TAG" --revision-suffix $SUFFIX
+          NEW="$APP--$SUFFIX"
+          az containerapp ingress traffic set -g $RG -n $APP --revision-weight "${{ steps.prev.outputs.rev }}=100" "$NEW=0"
+          FQDN=$(az containerapp revision show -g $RG -n $APP --revision "$NEW" --query properties.fqdn -o tsv)
+          for i in $(seq 1 30); do curl -fsS "https://$FQDN/readyz" && break; sleep 5; done
+          curl -fsS "https://$FQDN/readyz"
+          echo "NEW=$NEW" >> "$GITHUB_ENV"
+      - name: Shift traffic to new revision
+        run: az containerapp ingress traffic set -g $RG -n $APP --revision-weight "$NEW=100"
+      - name: Update worker
+        run: az containerapp update -g $RG -n $WORKER --image "${{ vars.ACR_LOGIN_SERVER }}/fils-api:$TAG"
+      - name: Rollback instructions on failure
+        if: failure()
+        run: |
+          echo "::error::Deployment failed. API traffic should still be on ${{ steps.prev.outputs.rev }}."
+          echo "Manual rollback: az containerapp ingress traffic set -g $RG -n $APP --revision-weight ${{ steps.prev.outputs.rev }}=100"
+          echo "Migrations are NOT auto-reverted (expand/contract policy). See fils/docs/deployment.md."
