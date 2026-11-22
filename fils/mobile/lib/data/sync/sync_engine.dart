@@ -19,6 +19,7 @@ import 'package:uuid/uuid.dart';
 
 import '../api/api_client.dart';
 import '../db/database.dart';
+import '../household/household_sharing.dart';
 import '../store.dart';
 
 enum SyncState { off, idle, syncing, error, conflicts, ownerMismatch, notConfigured }
@@ -108,6 +109,9 @@ class SyncEngine {
     await q(Entities.merchantAlias, (await db.select(db.merchantAliases).get()).map((e) => e.id));
     await q(Entities.asset, (await db.select(db.assets).get()).map((e) => e.id));
     await q(Entities.setting, SettingKeys.syncedKeys);
+    for (final r in await (db.select(db.sharedRecords)..where((x) => x.ownerUserId.isNull())).get()) {
+      await q('shared_${r.entity}', [r.id]);
+    }
   }
 
   Future<int> pendingCount() async => (await (db.select(db.outbox)..where((o) => o.state.equals('pending'))).get()).length;
@@ -115,6 +119,13 @@ class SyncEngine {
 
   // -------------------------------------------------------------- serialization
   Future<Map<String, dynamic>?> envelopeFor(String entity, String id) async {
+    if (SharedEntities.isShared(entity)) {
+      final r = await (db.select(db.sharedRecords)..where((x) => x.id.equals(id))).getSingleOrNull();
+      if (r == null || r.ownerUserId != null) return null; // only push copies I created
+      final env = _env(SharedEntities.serverEntity(entity), id, r.version, r.deletedAt, r.updatedAt, r.householdId,
+          (jsonDecode(r.payloadJson) as Map).cast<String, dynamic>());
+      return env;
+    }
     switch (entity) {
       case Entities.account:
         final a = await (db.select(db.accounts)..where((x) => x.id.equals(id))).getSingleOrNull();
@@ -313,6 +324,11 @@ class SyncEngine {
   }
 
   Future<void> _setLocalVersion(String entity, String id, int v) async {
+    final shared = await (db.select(db.sharedRecords)..where((x) => x.id.equals(id))).getSingleOrNull();
+    if (shared != null) {
+      await (db.update(db.sharedRecords)..where((x) => x.id.equals(id))).write(SharedRecordsCompanion(version: Value(v)));
+      return;
+    }
     switch (entity) {
       case Entities.account:
         await (db.update(db.accounts)..where((x) => x.id.equals(id))).write(AccountsCompanion(version: Value(v)));
@@ -358,6 +374,7 @@ class SyncEngine {
   }
 
   Future<_Apply> _applyRemote(Map<String, dynamic> rec) async {
+    if (rec['household_id'] != null) return _applyShared(rec);
     final entity = rec['entity'] as String;
     var id = rec['id'] as String;
     final version = (rec['version'] as num).toInt();
@@ -554,6 +571,33 @@ class SyncEngine {
       default:
         return _Apply.skipped;
     }
+    return _Apply.applied;
+  }
+
+  /// Household-scoped records are stored only in [SharedRecords]. They never touch the
+  /// personal ledger, so they can't change personal balances.
+  Future<_Apply> _applyShared(Map<String, dynamic> rec) async {
+    final id = rec['id'] as String;
+    final version = (rec['version'] as num).toInt();
+    final existing = await (db.select(db.sharedRecords)..where((x) => x.id.equals(id))).getSingleOrNull();
+    if (existing != null && existing.version >= version) return _Apply.skipped;
+    final pending = await (db.select(db.outbox)..where((o) => o.entityId.equals(id) & o.state.isIn(['pending', 'conflict']))).getSingleOrNull();
+    if (pending != null) {
+      await (db.update(db.outbox)..where((o) => o.seq.equals(pending.seq))).write(OutboxCompanion(state: const Value('conflict'), lastError: Value(jsonEncode(rec))));
+      return _Apply.conflict;
+    }
+    final deleted = rec['deleted'] == true;
+    await db.into(db.sharedRecords).insertOnConflictUpdate(SharedRecordsCompanion.insert(
+          id: id,
+          entity: rec['entity'] as String,
+          householdId: rec['household_id'] as String,
+          ownerUserId: Value(existing == null ? 'member' : existing.ownerUserId),
+          originalId: Value(existing?.originalId),
+          payloadJson: jsonEncode(rec['payload'] ?? const {}),
+          version: Value(version),
+          updatedAt: store.now,
+          deletedAt: Value(deleted ? store.now : null),
+        ));
     return _Apply.applied;
   }
 

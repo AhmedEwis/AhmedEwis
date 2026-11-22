@@ -13,6 +13,8 @@ import '../../ui/theme/theme.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/common.dart';
 import '../transactions/add_transaction_sheet.dart';
+import '../../app/services.dart';
+import '../household/share_sheet.dart';
 
 enum PlanTab { budgets, recurring, goals }
 
@@ -213,6 +215,12 @@ class _BudgetFormState extends ConsumerState<BudgetForm> {
         ]),
         if (error != null) Text(error!, style: TextStyle(color: context.fp.negative)),
         const SizedBox(height: 16),
+        if (widget.existing != null && (ref.watch(householdsCacheProvider).value ?? const []).any((h) => h.canShare))
+          TextButton.icon(
+            onPressed: () => showShareSheet(context, ref, budgetId: widget.existing!.id),
+            icon: const Icon(Icons.group_add_outlined),
+            label: Text(s.ar ? 'مشاركة مع العائلة' : 'Share with household'),
+          ),
         Row(children: [
           if (widget.existing != null)
             TextButton(

@@ -10981,6 +10981,582 @@ class FxRatesCompanion extends UpdateCompanion<FxRateRow> {
   }
 }
 
+class $SharedRecordsTable extends SharedRecords
+    with TableInfo<$SharedRecordsTable, SharedRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SharedRecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entityMeta = const VerificationMeta('entity');
+  @override
+  late final GeneratedColumn<String> entity = GeneratedColumn<String>(
+    'entity',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _householdIdMeta = const VerificationMeta(
+    'householdId',
+  );
+  @override
+  late final GeneratedColumn<String> householdId = GeneratedColumn<String>(
+    'household_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerUserIdMeta = const VerificationMeta(
+    'ownerUserId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerUserId = GeneratedColumn<String>(
+    'owner_user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originalIdMeta = const VerificationMeta(
+    'originalId',
+  );
+  @override
+  late final GeneratedColumn<String> originalId = GeneratedColumn<String>(
+    'original_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
+    'payloadJson',
+  );
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+    'payload_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+    'version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    entity,
+    householdId,
+    ownerUserId,
+    originalId,
+    payloadJson,
+    version,
+    updatedAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'shared_records';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SharedRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('entity')) {
+      context.handle(
+        _entityMeta,
+        entity.isAcceptableOrUnknown(data['entity']!, _entityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityMeta);
+    }
+    if (data.containsKey('household_id')) {
+      context.handle(
+        _householdIdMeta,
+        householdId.isAcceptableOrUnknown(
+          data['household_id']!,
+          _householdIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_householdIdMeta);
+    }
+    if (data.containsKey('owner_user_id')) {
+      context.handle(
+        _ownerUserIdMeta,
+        ownerUserId.isAcceptableOrUnknown(
+          data['owner_user_id']!,
+          _ownerUserIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('original_id')) {
+      context.handle(
+        _originalIdMeta,
+        originalId.isAcceptableOrUnknown(data['original_id']!, _originalIdMeta),
+      );
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+        _payloadJsonMeta,
+        payloadJson.isAcceptableOrUnknown(
+          data['payload_json']!,
+          _payloadJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadJsonMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SharedRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SharedRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      entity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity'],
+      )!,
+      householdId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}household_id'],
+      )!,
+      ownerUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_user_id'],
+      ),
+      originalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}original_id'],
+      ),
+      payloadJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_json'],
+      )!,
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $SharedRecordsTable createAlias(String alias) {
+    return $SharedRecordsTable(attachedDatabase, alias);
+  }
+}
+
+class SharedRow extends DataClass implements Insertable<SharedRow> {
+  final String id;
+  final String entity;
+  final String householdId;
+  final String? ownerUserId;
+  final String? originalId;
+  final String payloadJson;
+  final int version;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  const SharedRow({
+    required this.id,
+    required this.entity,
+    required this.householdId,
+    this.ownerUserId,
+    this.originalId,
+    required this.payloadJson,
+    required this.version,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['entity'] = Variable<String>(entity);
+    map['household_id'] = Variable<String>(householdId);
+    if (!nullToAbsent || ownerUserId != null) {
+      map['owner_user_id'] = Variable<String>(ownerUserId);
+    }
+    if (!nullToAbsent || originalId != null) {
+      map['original_id'] = Variable<String>(originalId);
+    }
+    map['payload_json'] = Variable<String>(payloadJson);
+    map['version'] = Variable<int>(version);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  SharedRecordsCompanion toCompanion(bool nullToAbsent) {
+    return SharedRecordsCompanion(
+      id: Value(id),
+      entity: Value(entity),
+      householdId: Value(householdId),
+      ownerUserId: ownerUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ownerUserId),
+      originalId: originalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originalId),
+      payloadJson: Value(payloadJson),
+      version: Value(version),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory SharedRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SharedRow(
+      id: serializer.fromJson<String>(json['id']),
+      entity: serializer.fromJson<String>(json['entity']),
+      householdId: serializer.fromJson<String>(json['householdId']),
+      ownerUserId: serializer.fromJson<String?>(json['ownerUserId']),
+      originalId: serializer.fromJson<String?>(json['originalId']),
+      payloadJson: serializer.fromJson<String>(json['payloadJson']),
+      version: serializer.fromJson<int>(json['version']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'entity': serializer.toJson<String>(entity),
+      'householdId': serializer.toJson<String>(householdId),
+      'ownerUserId': serializer.toJson<String?>(ownerUserId),
+      'originalId': serializer.toJson<String?>(originalId),
+      'payloadJson': serializer.toJson<String>(payloadJson),
+      'version': serializer.toJson<int>(version),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  SharedRow copyWith({
+    String? id,
+    String? entity,
+    String? householdId,
+    Value<String?> ownerUserId = const Value.absent(),
+    Value<String?> originalId = const Value.absent(),
+    String? payloadJson,
+    int? version,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => SharedRow(
+    id: id ?? this.id,
+    entity: entity ?? this.entity,
+    householdId: householdId ?? this.householdId,
+    ownerUserId: ownerUserId.present ? ownerUserId.value : this.ownerUserId,
+    originalId: originalId.present ? originalId.value : this.originalId,
+    payloadJson: payloadJson ?? this.payloadJson,
+    version: version ?? this.version,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  SharedRow copyWithCompanion(SharedRecordsCompanion data) {
+    return SharedRow(
+      id: data.id.present ? data.id.value : this.id,
+      entity: data.entity.present ? data.entity.value : this.entity,
+      householdId: data.householdId.present
+          ? data.householdId.value
+          : this.householdId,
+      ownerUserId: data.ownerUserId.present
+          ? data.ownerUserId.value
+          : this.ownerUserId,
+      originalId: data.originalId.present
+          ? data.originalId.value
+          : this.originalId,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
+      version: data.version.present ? data.version.value : this.version,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SharedRow(')
+          ..write('id: $id, ')
+          ..write('entity: $entity, ')
+          ..write('householdId: $householdId, ')
+          ..write('ownerUserId: $ownerUserId, ')
+          ..write('originalId: $originalId, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('version: $version, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    entity,
+    householdId,
+    ownerUserId,
+    originalId,
+    payloadJson,
+    version,
+    updatedAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SharedRow &&
+          other.id == this.id &&
+          other.entity == this.entity &&
+          other.householdId == this.householdId &&
+          other.ownerUserId == this.ownerUserId &&
+          other.originalId == this.originalId &&
+          other.payloadJson == this.payloadJson &&
+          other.version == this.version &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class SharedRecordsCompanion extends UpdateCompanion<SharedRow> {
+  final Value<String> id;
+  final Value<String> entity;
+  final Value<String> householdId;
+  final Value<String?> ownerUserId;
+  final Value<String?> originalId;
+  final Value<String> payloadJson;
+  final Value<int> version;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const SharedRecordsCompanion({
+    this.id = const Value.absent(),
+    this.entity = const Value.absent(),
+    this.householdId = const Value.absent(),
+    this.ownerUserId = const Value.absent(),
+    this.originalId = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.version = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SharedRecordsCompanion.insert({
+    required String id,
+    required String entity,
+    required String householdId,
+    this.ownerUserId = const Value.absent(),
+    this.originalId = const Value.absent(),
+    required String payloadJson,
+    this.version = const Value.absent(),
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       entity = Value(entity),
+       householdId = Value(householdId),
+       payloadJson = Value(payloadJson),
+       updatedAt = Value(updatedAt);
+  static Insertable<SharedRow> custom({
+    Expression<String>? id,
+    Expression<String>? entity,
+    Expression<String>? householdId,
+    Expression<String>? ownerUserId,
+    Expression<String>? originalId,
+    Expression<String>? payloadJson,
+    Expression<int>? version,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (entity != null) 'entity': entity,
+      if (householdId != null) 'household_id': householdId,
+      if (ownerUserId != null) 'owner_user_id': ownerUserId,
+      if (originalId != null) 'original_id': originalId,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (version != null) 'version': version,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SharedRecordsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? entity,
+    Value<String>? householdId,
+    Value<String?>? ownerUserId,
+    Value<String?>? originalId,
+    Value<String>? payloadJson,
+    Value<int>? version,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return SharedRecordsCompanion(
+      id: id ?? this.id,
+      entity: entity ?? this.entity,
+      householdId: householdId ?? this.householdId,
+      ownerUserId: ownerUserId ?? this.ownerUserId,
+      originalId: originalId ?? this.originalId,
+      payloadJson: payloadJson ?? this.payloadJson,
+      version: version ?? this.version,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (entity.present) {
+      map['entity'] = Variable<String>(entity.value);
+    }
+    if (householdId.present) {
+      map['household_id'] = Variable<String>(householdId.value);
+    }
+    if (ownerUserId.present) {
+      map['owner_user_id'] = Variable<String>(ownerUserId.value);
+    }
+    if (originalId.present) {
+      map['original_id'] = Variable<String>(originalId.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SharedRecordsCompanion(')
+          ..write('id: $id, ')
+          ..write('entity: $entity, ')
+          ..write('householdId: $householdId, ')
+          ..write('ownerUserId: $ownerUserId, ')
+          ..write('originalId: $originalId, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('version: $version, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -11004,6 +11580,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AuditEventsTable auditEvents = $AuditEventsTable(this);
   late final $LocalConsentsTable localConsents = $LocalConsentsTable(this);
   late final $FxRatesTable fxRates = $FxRatesTable(this);
+  late final $SharedRecordsTable sharedRecords = $SharedRecordsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -11025,6 +11602,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     auditEvents,
     localConsents,
     fxRates,
+    sharedRecords,
   ];
 }
 
@@ -16990,6 +17568,299 @@ typedef $$FxRatesTableProcessedTableManager =
       FxRateRow,
       PrefetchHooks Function()
     >;
+typedef $$SharedRecordsTableCreateCompanionBuilder =
+    SharedRecordsCompanion Function({
+      required String id,
+      required String entity,
+      required String householdId,
+      Value<String?> ownerUserId,
+      Value<String?> originalId,
+      required String payloadJson,
+      Value<int> version,
+      required DateTime updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$SharedRecordsTableUpdateCompanionBuilder =
+    SharedRecordsCompanion Function({
+      Value<String> id,
+      Value<String> entity,
+      Value<String> householdId,
+      Value<String?> ownerUserId,
+      Value<String?> originalId,
+      Value<String> payloadJson,
+      Value<int> version,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+class $$SharedRecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $SharedRecordsTable> {
+  $$SharedRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entity => $composableBuilder(
+    column: $table.entity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get householdId => $composableBuilder(
+    column: $table.householdId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerUserId => $composableBuilder(
+    column: $table.ownerUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originalId => $composableBuilder(
+    column: $table.originalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SharedRecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SharedRecordsTable> {
+  $$SharedRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entity => $composableBuilder(
+    column: $table.entity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get householdId => $composableBuilder(
+    column: $table.householdId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerUserId => $composableBuilder(
+    column: $table.ownerUserId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originalId => $composableBuilder(
+    column: $table.originalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SharedRecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SharedRecordsTable> {
+  $$SharedRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get entity =>
+      $composableBuilder(column: $table.entity, builder: (column) => column);
+
+  GeneratedColumn<String> get householdId => $composableBuilder(
+    column: $table.householdId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ownerUserId => $composableBuilder(
+    column: $table.ownerUserId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get originalId => $composableBuilder(
+    column: $table.originalId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$SharedRecordsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SharedRecordsTable,
+          SharedRow,
+          $$SharedRecordsTableFilterComposer,
+          $$SharedRecordsTableOrderingComposer,
+          $$SharedRecordsTableAnnotationComposer,
+          $$SharedRecordsTableCreateCompanionBuilder,
+          $$SharedRecordsTableUpdateCompanionBuilder,
+          (
+            SharedRow,
+            BaseReferences<_$AppDatabase, $SharedRecordsTable, SharedRow>,
+          ),
+          SharedRow,
+          PrefetchHooks Function()
+        > {
+  $$SharedRecordsTableTableManager(_$AppDatabase db, $SharedRecordsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SharedRecordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SharedRecordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SharedRecordsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> entity = const Value.absent(),
+                Value<String> householdId = const Value.absent(),
+                Value<String?> ownerUserId = const Value.absent(),
+                Value<String?> originalId = const Value.absent(),
+                Value<String> payloadJson = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SharedRecordsCompanion(
+                id: id,
+                entity: entity,
+                householdId: householdId,
+                ownerUserId: ownerUserId,
+                originalId: originalId,
+                payloadJson: payloadJson,
+                version: version,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String entity,
+                required String householdId,
+                Value<String?> ownerUserId = const Value.absent(),
+                Value<String?> originalId = const Value.absent(),
+                required String payloadJson,
+                Value<int> version = const Value.absent(),
+                required DateTime updatedAt,
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SharedRecordsCompanion.insert(
+                id: id,
+                entity: entity,
+                householdId: householdId,
+                ownerUserId: ownerUserId,
+                originalId: originalId,
+                payloadJson: payloadJson,
+                version: version,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$SharedRecordsTable, SharedRow>(table),
+                  BaseReferences<_$AppDatabase, $SharedRecordsTable, SharedRow>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SharedRecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SharedRecordsTable,
+      SharedRow,
+      $$SharedRecordsTableFilterComposer,
+      $$SharedRecordsTableOrderingComposer,
+      $$SharedRecordsTableAnnotationComposer,
+      $$SharedRecordsTableCreateCompanionBuilder,
+      $$SharedRecordsTableUpdateCompanionBuilder,
+      (
+        SharedRow,
+        BaseReferences<_$AppDatabase, $SharedRecordsTable, SharedRow>,
+      ),
+      SharedRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -17026,4 +17897,6 @@ class $AppDatabaseManager {
       $$LocalConsentsTableTableManager(_db, _db.localConsents);
   $$FxRatesTableTableManager get fxRates =>
       $$FxRatesTableTableManager(_db, _db.fxRates);
+  $$SharedRecordsTableTableManager get sharedRecords =>
+      $$SharedRecordsTableTableManager(_db, _db.sharedRecords);
 }

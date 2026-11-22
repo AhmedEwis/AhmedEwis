@@ -264,6 +264,24 @@ class FxRates extends Table {
   Set<Column> get primaryKey => {base, quote, asOf};
 }
 
+/// Household-scoped records (shared copies). They are deliberately kept OUT of the
+/// personal ledger tables, so sharing never changes personal balances or totals, and records
+/// pulled from other members never mix with personal data.
+@DataClassName('SharedRow')
+class SharedRecords extends Table {
+  TextColumn get id => text()(); // server record id (uuid)
+  TextColumn get entity => text()(); // account | transaction | budget
+  TextColumn get householdId => text()();
+  TextColumn get ownerUserId => text().nullable()(); // null = created on this device by me
+  TextColumn get originalId => text().nullable()(); // my personal record this copy came from
+  TextColumn get payloadJson => text()();
+  IntColumn get version => integer().withDefault(const Constant(0))();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @DriftDatabase(tables: [
   Accounts,
   Transactions,
@@ -281,12 +299,13 @@ class FxRates extends Table {
   AuditEvents,
   LocalConsents,
   FxRates,
+  SharedRecords,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -298,6 +317,12 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('CREATE UNIQUE INDEX idx_src_platform ON source_events(source, platform_id) WHERE platform_id IS NOT NULL');
           await customStatement('CREATE INDEX idx_src_hash ON source_events(text_hash)');
           await customStatement('CREATE INDEX idx_outbox_entity ON outbox(entity, entity_id)');
+        },
+        onUpgrade: (m, from, to) async {
+          // v1 → v2: household sharing table. Additive only; existing data untouched.
+          if (from < 2) {
+            await m.createTable(sharedRecords);
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');

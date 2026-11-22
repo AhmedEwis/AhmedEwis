@@ -8,6 +8,7 @@ import '../data/api/api_client.dart';
 import '../data/auth/auth_service.dart';
 import '../data/billing/billing_service.dart';
 import '../data/db/database.dart';
+import '../data/household/household_sharing.dart';
 import '../data/ingestion.dart';
 import '../data/store.dart';
 import '../data/sync/sync_engine.dart';
@@ -96,3 +97,11 @@ final localAssistantProvider = Provider<LocalAssistant>((ref) {
 });
 
 final cloudAssistantProvider = Provider<CloudAssistant>((ref) => CloudAssistant(ref.watch(apiProvider), ref.watch(localAssistantProvider)));
+
+final householdSharingProvider = Provider<HouseholdSharing>((ref) => HouseholdSharing(ref.watch(storeProvider)));
+final householdsCacheProvider = StreamProvider<List<HouseholdInfo>>((ref) {
+  final store = ref.watch(storeProvider);
+  final sharing = ref.watch(householdSharingProvider);
+  return store.watchSetting('households_cache').asyncMap((_) => sharing.cachedHouseholds());
+});
+final sharedOriginalsProvider = StreamProvider<Set<String>>((ref) => ref.watch(householdSharingProvider).watchSharedOriginals());

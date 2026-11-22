@@ -14,6 +14,9 @@ import '../../ui/theme/theme.dart';
 import '../../ui/widgets/common.dart';
 import '../../ui/widgets/tx_tile.dart';
 import 'add_transaction_sheet.dart';
+import '../../app/services.dart';
+import '../../data/household/household_sharing.dart';
+import '../household/share_sheet.dart';
 
 final _txByIdProvider = StreamProvider.family<TxRow?, String>((ref, id) {
   final db = ref.watch(storeProvider).db;
@@ -136,6 +139,25 @@ class TransactionDetailScreen extends ConsumerWidget {
                   OutlinedButton.icon(icon: const Icon(Icons.undo), label: Text(s.recordRefund), onPressed: () => _refund(context, ref, t)),
                 if (t.kind == TxKinds.expense || t.kind == TxKinds.income)
                   OutlinedButton.icon(icon: const Icon(Icons.swap_horiz), label: Text(s.linkTransfer), onPressed: () => _linkTransfer(context, ref, t)),
+                if ((t.kind == TxKinds.expense || t.kind == TxKinds.income || t.kind == TxKinds.refund) &&
+                    (ref.watch(householdsCacheProvider).value ?? const []).any((h) => h.canShare))
+                  (ref.watch(sharedOriginalsProvider).value ?? const <String>{}).contains(t.id)
+                      ? OutlinedButton.icon(
+                          icon: const Icon(Icons.group_off_outlined),
+                          label: Text(s.ar ? 'إلغاء المشاركة' : 'Stop sharing'),
+                          onPressed: () async {
+                            final sharing = ref.read(householdSharingProvider);
+                            for (final h in ref.read(householdsCacheProvider).value ?? const <HouseholdInfo>[]) {
+                              final sh = await sharing.existingShare(t.id, h.id);
+                              if (sh != null) await sharing.revoke(sh.id);
+                            }
+                          },
+                        )
+                      : OutlinedButton.icon(
+                          icon: const Icon(Icons.group_add_outlined),
+                          label: Text(s.ar ? 'مشاركة مع العائلة' : 'Share with household'),
+                          onPressed: () => showShareSheet(context, ref, transactionId: t.id),
+                        ),
                 if (t.deletedAt == null)
                   OutlinedButton.icon(
                     icon: Icon(Icons.delete_outline, color: p.negative),

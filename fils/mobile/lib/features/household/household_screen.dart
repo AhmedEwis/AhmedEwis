@@ -10,11 +10,17 @@ import '../../l10n/strings.dart';
 import '../../ui/theme/theme.dart';
 import '../../ui/widgets/common.dart';
 import '../auth/sign_in_sheet.dart';
+import '../../data/household/household_sharing.dart';
+import 'shared_feed.dart';
 
 final _householdsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final api = ref.watch(apiProvider);
   if (!api.configured || ref.watch(sessionProvider).value == null) return const [];
-  return (await api.households()).cast<Map>().map((e) => e.cast<String, dynamic>()).toList();
+  final list = (await api.households()).cast<Map>().map((e) => e.cast<String, dynamic>()).toList();
+  // Keep the local membership cache current and purge households we no longer belong to.
+  await ref.read(householdSharingProvider).updateMemberships(
+      [for (final h in list) HouseholdInfo(h['id'] as String, h['name'] as String? ?? '', h['my_role'] as String? ?? 'viewer')]);
+  return list;
 });
 
 /// Household sharing: explicit invitations with roles. Nothing personal is shared
@@ -74,6 +80,8 @@ class HouseholdScreen extends ConsumerWidget {
                         ),
                       if (h['my_role'] == 'owner')
                         OutlinedButton.icon(onPressed: () => _invite(context, ref, h['id'] as String), icon: const Icon(Icons.person_add_alt), label: Text(s.inviteMember)),
+                      const Divider(height: 24),
+                      SharedFeed(householdId: h['id'] as String),
                     ]),
                   ),
                 ),
