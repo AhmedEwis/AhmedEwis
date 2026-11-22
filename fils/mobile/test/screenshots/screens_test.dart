@@ -1,5 +1,5 @@
 // Renders real screens with synthetic demo data into PNGs for design review.
-// Run: flutter test test/screenshots --update-goldens
+// Opt-in (slow, ~10 min per variant): FILS_SCREENSHOTS=1 flutter test test/screenshots --update-goldens
 // Output: test/screenshots/goldens/*.png (copied to fils/docs/screenshots by CI/docs).
 import 'dart:io';
 
@@ -56,7 +56,7 @@ void main() {
 
   for (final locale in ['en', 'ar']) {
     for (final theme in ['light', 'dark']) {
-      testWidgets('screens $locale $theme', (tester) async {
+      testWidgets('screens $locale $theme', skip: Platform.environment['FILS_SCREENSHOTS'] == null, (tester) async {
         tester.view.physicalSize = const Size(780, 1688); // 390x844 @2x
         tester.view.devicePixelRatio = 2;
         addTearDown(tester.view.reset);
