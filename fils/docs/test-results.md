@@ -31,6 +31,13 @@ Every test below was first run against the unfixed code (`0be447d`), with only a
 
 **Full run after the fixes:** `FILS_E2E_API=http://127.0.0.1:8099 flutter test test/core test/perf test/e2e` → **148 passed, 0 failed**. `flutter analyze` → **0 errors, 0 warnings**. The backend is unchanged in this round.
 
+**CI at `15700e1`:**
+- `mobile-ci` run `45079936104`: success. Android tests passed. The iOS device build (release, no codesign) and the simulator build both succeeded.
+- `security` run `45079936108`: success.
+- `ios-testflight` run `45079936350`: the preflight reports *"Missing secrets: APPLE_TEAM_ID APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_PRIVATE_KEY. No signed build attempted."*
+
+So the iOS app is compiled, but not signed, not uploaded and not installable.
+
 ## 1. Automated tests
 
 | Suite | Command | Result | Commit |
