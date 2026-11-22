@@ -6,6 +6,8 @@ import 'app/app.dart';
 import 'app/providers.dart';
 import 'data/db/open.dart';
 import 'data/store.dart';
+// Keeps the headless capture entrypoint in the AOT snapshot.
+export 'capture_main.dart' show captureMain;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

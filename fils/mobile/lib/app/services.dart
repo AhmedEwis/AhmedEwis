@@ -109,3 +109,26 @@ final sharedOriginalsProvider = StreamProvider<Set<String>>((ref) => ref.watch(h
 
 final notificationPortProvider = Provider<NotificationPort>((ref) => PluginNotificationPort());
 final notificationSchedulerProvider = Provider<NotificationScheduler>((ref) => NotificationScheduler(ref.watch(storeProvider), ref.watch(notificationPortProvider)));
+
+/// Securely queued captures not yet parsed into the ledger (native inbox).
+final queuedCountProvider = FutureProvider.autoDispose<int>((ref) {
+  ref.watch(settingsMapProvider); // refresh whenever a drain updates last-capture settings
+  return ref.watch(captureBridgeProvider).inboxCount();
+});
+
+class CaptureCounts {
+  final int posted, review, ignored, merged;
+  const CaptureCounts(this.posted, this.review, this.ignored, this.merged);
+}
+
+/// Today's capture outcomes from the source-event log.
+final captureCountsProvider = StreamProvider<CaptureCounts>((ref) {
+  final store = ref.watch(storeProvider);
+  final db = store.db;
+  return db.select(db.sourceEvents).watch().map((rows) {
+    final since = DateTime.now().toUtc().subtract(const Duration(hours: 24));
+    final r = rows.where((e) => e.receivedAt.isAfter(since));
+    int c(String st) => r.where((e) => e.status == st).length;
+    return CaptureCounts(c('posted'), c('review'), c('ignored') + c('duplicate'), c('merged'));
+  });
+});

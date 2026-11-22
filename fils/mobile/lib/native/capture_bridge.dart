@@ -33,6 +33,9 @@ class CaptureBridge {
     await _ch.invokeMethod('ack', {'ids': ids});
   }
 
+  /// Number of securely queued captures not yet processed into the ledger.
+  Future<int> inboxCount() async => supported ? (await _ch.invokeMethod<int>('inboxCount') ?? 0) : 0;
+
   Stream<void> get onNewEvents => supported ? _events.receiveBroadcastStream().map((_) {}) : const Stream.empty();
 
   // ---- Android

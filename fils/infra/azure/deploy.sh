@@ -32,7 +32,7 @@ case "${1:-}" in
     az keyvault secret set --vault-name "$KV" -n fils-database-url --value "postgresql+psycopg://filsadmin:${FILS_PG_ADMIN_PASSWORD}@${PG}:5432/fils?sslmode=require" -o none
     az keyvault secret set --vault-name "$KV" -n fils-pg-admin-password --value "$FILS_PG_ADMIN_PASSWORD" -o none
     echo "Optional (only when configured): fils-azure-openai-api-key, fils-azure-speech-key, fils-docintel-key, fils-google-service-account-json"
-    echo "Then pass them via the optionalSecrets param of modules/containerapps.bicep."
+    echo "Then pass them via the keyVaultEnvMap param of modules/containerapps.bicep."
     ;;
   image)
     ACR=$(out acrLoginServer)

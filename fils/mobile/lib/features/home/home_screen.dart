@@ -8,6 +8,7 @@ import '../../core/time/kuwait_time.dart';
 import '../../data/db/database.dart';
 import '../../data/store.dart';
 import '../../l10n/strings.dart';
+import '../../app/services.dart';
 import '../../ui/theme/theme.dart';
 import '../../ui/theme/tokens.dart';
 import '../../ui/widgets/common.dart';
@@ -346,6 +347,8 @@ class _StatusCards extends ConsumerWidget {
               ]),
             ),
             if (lastAt == null) Text(s.setUp, style: context.tt.labelLarge?.copyWith(color: Theme.of(context).colorScheme.primary)),
+            if ((ref.watch(queuedCountProvider).value ?? 0) > 0)
+              Pill(s.ar ? '${ref.watch(queuedCountProvider).value} بالانتظار' : '${ref.watch(queuedCountProvider).value} queued', bg: p.warningBg, fg: p.warning),
             Icon(context.isRtl ? Icons.chevron_left : Icons.chevron_right, color: p.inkTertiary),
           ]),
         ),

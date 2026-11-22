@@ -20,6 +20,7 @@ import '../../data/store.dart';
 import '../../l10n/strings.dart';
 import '../../ui/theme/theme.dart';
 import '../../ui/widgets/common.dart';
+import 'capture_status.dart';
 
 class CaptureScreen extends ConsumerStatefulWidget {
   const CaptureScreen({super.key});
@@ -81,6 +82,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> with WidgetsBindi
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
         children: [
+          const CapturePipelineStatus(),
+          const SizedBox(height: 12),
           if (Platform.isIOS) ..._ios(context),
           if (Platform.isAndroid) ..._android(context),
           if (!Platform.isIOS && !Platform.isAndroid) FCard(child: Text(s.ar ? 'الالتقاط التلقائي متاح على iOS وAndroid.' : 'Auto-capture is available on iOS and Android.')),

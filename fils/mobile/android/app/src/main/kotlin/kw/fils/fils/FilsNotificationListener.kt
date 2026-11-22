@@ -70,6 +70,8 @@ class FilsNotificationListener : NotificationListenerService() {
         val platformId = "${sbn.key}|$hash"
         CaptureInbox.add(this, "notification", if (title != null) "$title\n$body" else body, title, pkg, platformId)
         getSharedPreferences(PREFS, MODE_PRIVATE).edit().putLong(KEY_LAST_EVENT, now).apply()
+        // Process now if the UI isn't running (headless engine); otherwise the UI drains.
+        HeadlessCaptureRunner.request(this)
     }
 
     private fun sha256(s: String): String =

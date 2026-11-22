@@ -22,6 +22,7 @@ class SmsReceiver : BroadcastReceiver() {
             val body = parts.joinToString("") { it.messageBody ?: "" }
             val ts = parts.firstOrNull()?.timestampMillis ?: 0L
             CaptureInbox.add(ctx, "sms", body, sender, null, "sms|$sender|$ts|${body.hashCode()}")
+            HeadlessCaptureRunner.request(ctx)
         }
     }
 }

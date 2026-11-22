@@ -28,6 +28,11 @@ jobs:
       - run: flutter test --reporter expanded
       - name: Android debug APK (play flavor, no SMS permission)
         run: flutter build apk --debug --flavor play --dart-define=FILS_ENV=development
+      - name: Release-config check (play flavor has no SMS permissions)
+        run: |
+          AAPT=$(ls $ANDROID_HOME/build-tools/*/aapt2 | tail -1)
+          $AAPT dump permissions build/app/outputs/flutter-apk/app-play-debug.apk | tee perms.txt
+          if grep -Ei 'READ_SMS|RECEIVE_SMS|SEND_SMS|RECEIVE_MMS' perms.txt; then echo "SMS permission in play build" && exit 1; fi
       - name: Android release APK (unsigned unless signing secrets are configured)
         env:
           FILS_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -58,7 +63,16 @@ jobs:
         with: { flutter-version: '${{ env.FLUTTER_VERSION }}', channel: stable, cache: true }
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
-      - name: iOS build (no codesign)
+      - name: iOS device build (release, no codesign)
         run: flutter build ios --release --no-codesign --dart-define=FILS_ENV=staging
+      - name: Verify Share Extension embedded + entitlements declared
+        run: |
+          test -d build/ios/iphoneos/Runner.app/PlugIns/ShareExtension.appex
+          /usr/libexec/PlistBuddy -c 'Print :NSExtension:NSExtensionPointIdentifier' build/ios/iphoneos/Runner.app/PlugIns/ShareExtension.appex/Info.plist | grep -q com.apple.share-services
+          grep -q group.kw.fils ios/Runner/Runner.entitlements
+          grep -q group.kw.fils ios/ShareExtension/ShareExtension.entitlements
+          echo "Share extension OK"
+      - name: iOS simulator build (debug, unsigned)
+        run: flutter build ios --simulator --debug --dart-define=FILS_ENV=development
       # Signed TestFlight builds: add an App Store Connect API key (secrets APP_STORE_CONNECT_*)
       # and run `flutter build ipa --export-options-plist=ios/ExportOptions.plist`; see fils/docs/store-submission.md.

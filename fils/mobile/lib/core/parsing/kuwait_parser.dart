@@ -394,19 +394,22 @@ class KuwaitParser {
     final rawAmount = f['amount'] ?? '';
     final amounts = _findAmounts(normalizeDigits(rawAmount), normalizeForMatch(rawAmount));
     Money? amount;
-    if (amounts.isNotEmpty) {
+    if (amounts.isNotEmpty && amounts.first.minor > 0) {
       amount = Money(amounts.first.minor, amounts.first.currency);
+    } else if (amounts.isNotEmpty) {
+      notes.add('Wallet reported a zero amount (a known intermittent Shortcuts issue); sent to review.');
     } else {
       // The amount might come as a bare number; the currency then comes from a separate
       // field or is left unknown.
       final cur = (f['currency'] ?? '').toUpperCase();
       if (cur.length == 3) {
         final m = Money.parse(rawAmount.replaceAll(RegExp(r'[^\d.,٠-٩٫]'), ''), cur);
-        if (m != null) amount = m;
+        if (m != null && m.minor > 0) amount = m;
       }
       if (amount == null) notes.add('Wallet amount "$rawAmount" had no recognizable currency; sent to review.');
     }
-    final mm = matchMerchant(f['merchant'], userAliases: userAliases);
+    final merchantText = (f['merchant'] ?? '').trim().isEmpty ? f['name'] : f['merchant'];
+    final mm = matchMerchant(merchantText, userAliases: userAliases);
     final card = RegExp(r'(\d{4})\s*$').firstMatch(f['card'] ?? '')?.group(1);
     return ParsedEvent(
       kind: TxKind.purchase,

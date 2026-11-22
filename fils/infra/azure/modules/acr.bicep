@@ -11,7 +11,6 @@ resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   sku: { name: sku }
   properties: {
     adminUserEnabled: false
-    anonymousPullEnabled: false
   }
 }
 

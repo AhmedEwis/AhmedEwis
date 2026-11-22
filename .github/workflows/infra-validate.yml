@@ -1,0 +1,32 @@
+name: infra-validate
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths: ['fils/infra/**', '.github/workflows/infra-validate.yml']
+  pull_request:
+    paths: ['fils/infra/**']
+permissions:
+  contents: read
+jobs:
+  bicep:
+    runs-on: ubuntu-24.04
+    defaults: { run: { working-directory: fils/infra/azure } }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Bicep CLI (pinned)
+        run: |
+          curl -sSL -o /usr/local/bin/bicep https://github.com/Azure/bicep/releases/download/v0.31.92/bicep-linux-x64
+          chmod +x /usr/local/bin/bicep && bicep --version
+      - name: Compile templates (fail on warnings)
+        run: |
+          bicep build main.bicep --stdout > /dev/null 2> build.log; cat build.log
+          if grep -q Warning build.log; then exit 1; fi
+      - name: Compile parameter files (validation-only placeholder secret)
+        env: { FILS_PG_ADMIN_PASSWORD: validation-only-not-a-secret }
+        run: for p in params/*.bicepparam; do bicep build-params "$p" --stdout > /dev/null; done
+      - name: Missing secret must fail
+        run: |
+          if bicep build-params params/production.bicepparam --stdout > /dev/null 2>&1; then echo "expected failure without FILS_PG_ADMIN_PASSWORD"; exit 1; fi
+      - run: bash -n deploy.sh
+      # `az deployment group what-if` requires Azure OIDC credentials (see deploy-backend.yml);
+      # it is intentionally not run here.

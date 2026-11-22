@@ -21,7 +21,8 @@ param apiMaxReplicas int
 @description('Non-secret FILS_* settings, e.g. {"FILS_APPLE_CLIENT_IDS": "[\\"kw.fils.fils\\"]"}')
 param appSettings object = {}
 @description('Optional Key Vault secrets: { ENV_VAR_NAME: "kv-secret-name" }. Only list secrets that exist.')
-param optionalSecrets object = {}
+// Lint suppression is unnecessary: this maps ENV_VAR → Key Vault secret NAME (no secret values).
+param keyVaultEnvMap object = {}
 
 resource law 'Microsoft.OperationalInsights/workspaces@2023-09-01' existing = {
   name: logAnalyticsWorkspaceName
@@ -48,12 +49,12 @@ var requiredSecrets = [
   { name: 'database-url', keyVaultUrl: '${kv}secrets/fils-database-url', identity: identityId }
   { name: 'appi-conn', value: appInsightsConnectionString }
 ]
-var optionalSecretDefs = [for item in items(optionalSecrets): {
+var keyVaultEnvDefs = [for item in items(keyVaultEnvMap): {
   name: toLower(replace(item.key, '_', '-'))
   keyVaultUrl: '${kv}secrets/${item.value}'
   identity: identityId
 }]
-var secrets = concat(requiredSecrets, optionalSecretDefs)
+var secrets = concat(requiredSecrets, keyVaultEnvDefs)
 
 var baseEnv = [
   { name: 'FILS_ENV', value: env }
@@ -63,7 +64,7 @@ var baseEnv = [
   { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', secretRef: 'appi-conn' }
 ]
 var settingEnv = [for item in items(appSettings): { name: item.key, value: string(item.value) }]
-var optionalEnv = [for item in items(optionalSecrets): { name: item.key, secretRef: toLower(replace(item.key, '_', '-')) }]
+var optionalEnv = [for item in items(keyVaultEnvMap): { name: item.key, secretRef: toLower(replace(item.key, '_', '-')) }]
 var envVars = concat(baseEnv, settingEnv, optionalEnv)
 
 var registries = [ { server: acrLoginServer, identity: identityId } ]

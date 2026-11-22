@@ -45,6 +45,11 @@ class DatabaseOpener {
         db.execute("PRAGMA key = '$escaped'");
         // Verify the key works (and that the cipher library is present) before use.
         db.execute('SELECT count(*) FROM sqlite_master');
+        // The UI engine and the headless capture engine may open the file concurrently:
+        // WAL allows a reader alongside a writer, and the busy timeout waits for locks
+        // instead of failing.
+        db.execute('PRAGMA journal_mode = WAL');
+        db.execute('PRAGMA busy_timeout = 5000');
       },
     );
     return AppDatabase(executor);
