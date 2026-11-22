@@ -18,17 +18,20 @@ class FCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.fp;
     final body = Padding(padding: padding, child: child);
-    return Container(
-      decoration: BoxDecoration(
-        color: color ?? p.surface,
-        borderRadius: BorderRadius.circular(radius),
-        boxShadow: Theme.of(context).brightness == Brightness.light ? FilsShadow.card : null,
-        border: Theme.of(context).brightness == Brightness.dark ? Border.all(color: p.border) : null,
-      ),
-      // A transparency Material lets ListTiles/InkWells inside the card paint ripples.
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(radius),
+      side: dark ? BorderSide(color: p.border) : BorderSide.none,
+    );
+    // The DecoratedBox carries only the shadow (no color); the Material paints the surface,
+    // so ListTiles/InkWells inside show their ripples correctly.
+    return DecoratedBox(
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(radius), boxShadow: dark ? null : FilsShadow.card),
       child: Material(
-        type: MaterialType.transparency,
-        child: onTap == null ? body : InkWell(borderRadius: BorderRadius.circular(radius), onTap: onTap, child: body),
+        color: color ?? p.surface,
+        shape: shape,
+        clipBehavior: Clip.antiAlias,
+        child: onTap == null ? body : InkWell(onTap: onTap, child: body),
       ),
     );
   }

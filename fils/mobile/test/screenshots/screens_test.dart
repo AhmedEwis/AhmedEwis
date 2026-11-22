@@ -84,13 +84,14 @@ void main() {
         }
 
         await settle();
-        for (final (name, route) in screens) {
+        final only = Platform.environment['FILS_SCREENSHOT_ONLY']?.split(',');
+        for (final (name, route) in screens.where((e) => only == null || only.contains(e.$1))) {
           container.read(routerProvider).go(route);
           await settle();
           await expectLater(find.byType(FilsApp), matchesGoldenFile('goldens/${name}_${locale}_$theme.png'));
         }
         await tester.runAsync(() => store.db.close());
-      });
+      }, timeout: const Timeout(Duration(minutes: 40)));
     }
   }
 }
