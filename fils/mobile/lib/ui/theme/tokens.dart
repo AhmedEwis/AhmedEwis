@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Design tokens. Structure and proportions follow the observed reference (soft
 /// cool-gray surfaces, white rounded cards, a deep-teal accent and a gradient hero). The

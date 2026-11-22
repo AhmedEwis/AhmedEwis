@@ -37,10 +37,12 @@ jobs:
         run: |
           if [ -n "$FILS_KEYSTORE_BASE64" ]; then
             echo "$FILS_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
-            export FILS_KEYSTORE_PATH="$PWD/android/app/upload-keystore.jks"
+            # app/build.gradle.kts reads android/key.properties (git-ignored)
+            printf 'storeFile=upload-keystore.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+              "$FILS_KEYSTORE_PASSWORD" "$FILS_KEY_ALIAS" "$FILS_KEY_PASSWORD" > android/key.properties
           fi
           flutter build apk --release --flavor play --dart-define=FILS_ENV=staging --dart-define=FILS_API_BASE_URL=${{ vars.FILS_STAGING_API_URL }}
-          rm -f android/app/upload-keystore.jks
+          rm -f android/app/upload-keystore.jks android/key.properties
       - uses: actions/upload-artifact@v4
         with:
           name: android-apks

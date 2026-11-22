@@ -2,6 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Fils uses the microphone only while you hold the voice button, to turn what you say into an expense. Audio is not stored.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Fils converts your voice into text to create expenses and answer questions about your spending.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Use Face ID to unlock Fils.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>shortcuts</string>
+	</array>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ar</string>
+	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

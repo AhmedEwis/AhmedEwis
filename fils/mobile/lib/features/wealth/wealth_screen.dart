@@ -1,5 +1,5 @@
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -58,8 +58,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen> {
     // assets at their current recorded value (no historical prices are invented).
     final days = switch (range) { Range.m1 => 30, Range.m3 => 90, Range.y1 => 365, Range.all => _allDays(txs, now) };
     final points = _history(accounts.where((a) => a.currency == base && a.includeInNetWorth).toList(), txs, assets.where((a) => a.currency == base).toList(), tracked, now, days);
-    final start = points.isEmpty ? 0 : points.first.y;
-    final change = points.isEmpty ? 0 : (points.last.y - start);
+    final int start = points.isEmpty ? 0 : points.first.y.round();
+    final int change = points.isEmpty ? 0 : points.last.y.round() - start;
 
     final spendable = accounts.where((a) => !a.isLiability && (a.kind == 'bank' || a.kind == 'cash' || a.kind == 'wallet') && a.currency == base).toList();
     final spendableTotal = spendable.fold<int>(0, (x, a) => x + (balances[a.id] ?? 0));

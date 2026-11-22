@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../core/parsing/bank_registry.dart';
 import '../../data/db/database.dart';
