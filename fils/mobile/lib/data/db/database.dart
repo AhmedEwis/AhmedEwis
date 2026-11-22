@@ -101,6 +101,8 @@ class SourceEvents extends Table {
   TextColumn get notes => text().nullable()();
   DateTimeColumn get purgeAfter => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime()();
+  /// v3: the other account named by a transfer message (last 4), kept as linking evidence.
+  TextColumn get counterLast4 => text().nullable()();
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -305,7 +307,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -322,6 +324,22 @@ class AppDatabase extends _$AppDatabase {
           // v1 → v2: household sharing table. Additive only; existing data untouched.
           if (from < 2) {
             await m.createTable(sharedRecords);
+          }
+          // v2 → v3: replay safety. Guarantee the (source, platform_id) uniqueness on every
+          // upgraded database. Pre-existing duplicate rows are kept for audit but renamed
+          // (never deleted, so nothing that references them breaks), then the unique index
+          // is created. Rows without a platform id are allowed (see ingestion.dart).
+          if (from < 3) {
+            final cols = await customSelect("SELECT name FROM pragma_table_info('source_events')").get();
+            if (!cols.any((r) => r.data['name'] == 'counter_last4')) {
+              await m.addColumn(sourceEvents, sourceEvents.counterLast4);
+            }
+            await customStatement('''
+              UPDATE source_events SET platform_id = platform_id || '#dup-' || id
+              WHERE platform_id IS NOT NULL AND rowid NOT IN (
+                SELECT MIN(rowid) FROM source_events WHERE platform_id IS NOT NULL GROUP BY source, platform_id)''');
+            await customStatement(
+                'CREATE UNIQUE INDEX IF NOT EXISTS idx_src_platform ON source_events(source, platform_id) WHERE platform_id IS NOT NULL');
           }
         },
         beforeOpen: (details) async {

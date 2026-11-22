@@ -1,0 +1,125 @@
+# Signed iOS archive → TestFlight (internal testing). Nothing is published to the App Store.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions). Never commit them:
+#   APPLE_TEAM_ID                    10-character Apple Developer Team ID
+#   APP_STORE_CONNECT_KEY_ID         App Store Connect API key ID (role: App Manager or Admin)
+#   APP_STORE_CONNECT_ISSUER_ID      Issuer ID shown on the API keys page
+#   APP_STORE_CONNECT_PRIVATE_KEY    Full contents of the AuthKey_<KEY_ID>.p8 file
+# One-time App Store Connect setup: an app record with bundle ID kw.fils.fils.
+#
+# On push, only the preflight runs. It reports which prerequisites are missing and never
+# fails the branch. On manual dispatch, missing prerequisites fail the run.
+name: ios-testflight
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: Upload the signed build to TestFlight
+        type: boolean
+        default: true
+  push:
+    branches: [claude/kuwait-banks-aggregation-app-egj8k8]
+    paths: ['.github/workflows/ios-testflight.yml', 'fils/mobile/ios/ExportOptions.plist']
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: '3.50.1'
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          PKEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          missing=()
+          [ -n "$APPLE_TEAM_ID" ] || missing+=(APPLE_TEAM_ID)
+          [ -n "$KEY_ID" ] || missing+=(APP_STORE_CONNECT_KEY_ID)
+          [ -n "$ISSUER" ] || missing+=(APP_STORE_CONNECT_ISSUER_ID)
+          [ -n "$PKEY" ] || missing+=(APP_STORE_CONNECT_PRIVATE_KEY)
+          if [ ${#missing[@]} -eq 0 ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "### iOS signing prerequisites: all present" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### iOS signing prerequisites missing: no signed build was attempted"
+              for m in "${missing[@]}"; do echo "- \`$m\`"; done
+              echo
+              echo "See fils/docs/release-and-signing.md → TestFlight."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::notice::Missing secrets: ${missing[*]}. No signed build attempted."
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then exit 1; fi
+          fi
+
+  archive:
+    needs: preflight
+    if: needs.preflight.outputs.ready == 'true' && github.event_name == 'workflow_dispatch'
+    runs-on: macos-15
+    defaults: { run: { working-directory: fils/mobile } }
+    env:
+      KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      ISSUER: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      TEAM: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '${{ env.FLUTTER_VERSION }}', channel: stable, cache: true }
+      - name: Install App Store Connect API key (temporary, runner-local)
+        env:
+          PKEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          printf '%s' "$PKEY" > ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8
+          chmod 600 ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+      # Test build: staging environment, no API base URL, so the app runs fully local
+      # (no backend, AI, voice cloud or subscriptions needed for capture).
+      - name: Flutter release build (generates Xcode config)
+        run: |
+          BN=$((3000 + ${{ github.run_number }}))
+          echo "BUILD_NUMBER=$BN" >> "$GITHUB_ENV"
+          flutter build ios --release --no-codesign --build-number=$BN --dart-define=FILS_ENV=staging
+      - name: Archive (automatic signing via API key)
+        run: |
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Fils.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8 \
+            -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER" \
+            DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic archive | tail -40
+      - name: Export signed IPA
+        run: |
+          cp ios/ExportOptions.plist "$RUNNER_TEMP/ExportOptions.plist"
+          /usr/libexec/PlistBuddy -c "Set :teamID $TEAM" "$RUNNER_TEMP/ExportOptions.plist"
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Fils.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8 \
+            -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER"
+          ls -la "$RUNNER_TEMP/export"
+          codesign -dv --verbose=2 "$RUNNER_TEMP/Fils.xcarchive/Products/Applications/Runner.app" 2>&1 | grep -E 'Authority|TeamIdentifier|Identifier' || true
+          test -d "$RUNNER_TEMP/Fils.xcarchive/Products/Applications/Runner.app/PlugIns/ShareExtension.appex"
+      - name: Upload to TestFlight
+        if: inputs.upload
+        run: |
+          IPA=$(ls "$RUNNER_TEMP"/export/*.ipa | head -1)
+          xcrun altool --upload-app --type ios --file "$IPA" --apiKey "$KEY_ID" --apiIssuer "$ISSUER"
+          echo "### Uploaded build $BUILD_NUMBER to App Store Connect. It appears in TestFlight after Apple's processing." >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fils-ios-${{ env.BUILD_NUMBER }}
+          path: ${{ runner.temp }}/export/*.ipa
+          retention-days: 7
+      - name: Remove API key
+        if: always()
+        run: rm -rf ~/.appstoreconnect

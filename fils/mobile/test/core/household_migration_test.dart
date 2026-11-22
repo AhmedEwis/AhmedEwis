@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:drift/native.dart';
 import 'package:fils/core/ledger/ledger.dart';
 import 'package:fils/core/time/kuwait_time.dart';
@@ -74,7 +75,46 @@ void main() {
     expect((await st2.account(acct.id))!.openingBalanceMinor, 1234);
     expect(await db.select(db.sharedRecords).get(), isEmpty); // table exists again
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 2);
+    expect(v.data.values.first, 3);
+    await db.close();
+    await dir.delete(recursive: true);
+  });
+
+  test('schema migration v2 → v3: duplicate platform ids are kept but renamed, then the unique index is enforced', () async {
+    final dir = await Directory.systemTemp.createTemp('fils_mig3');
+    final f = File('${dir.path}/m.db');
+    var db = AppDatabase(NativeDatabase(f));
+    final st = FinanceStore(db);
+    await st.ensureSeeded();
+    final acct = await st.createAccount(name: 'Kept', kind: 'bank', currency: 'KWD');
+    final tx = await st.addTransaction(accountId: acct.id, kind: TxKinds.expense, amountMinor: 5250, currency: 'KWD', occurredAt: DateTime.utc(2026, 11, 1), source: 'shortcut');
+    await db.close();
+    // Simulate a v2 database written by a build without the index: two rows share
+    // (shortcut, run-1), one of them referenced by a transaction.
+    final raw = s3.sqlite3.open(f.path)
+      ..execute('DROP INDEX idx_src_platform')
+      ..execute('ALTER TABLE source_events DROP COLUMN counter_last4');
+    for (final (id, txId) in [('e1', tx.id), ('e2', null)]) {
+      raw.execute(
+          "INSERT INTO source_events (id, source, platform_id, text_hash, received_at, status, transaction_id, created_at) VALUES (?, 'shortcut', 'run-1', 'h', 0, 'posted', ?, 0)",
+          [id, txId]);
+    }
+    raw.execute('PRAGMA user_version = 2');
+    raw.dispose();
+
+    db = AppDatabase(NativeDatabase(f));
+    final rows = await (db.select(db.sourceEvents)..orderBy([(r) => OrderingTerm(expression: r.id)])).get();
+    expect(rows.length, 2, reason: 'no audit rows deleted');
+    expect(rows[0].platformId, 'run-1');
+    expect(rows[0].transactionId, tx.id);
+    expect(rows[1].platformId, 'run-1#dup-e2');
+    final idx = await db.customSelect("SELECT sql FROM sqlite_master WHERE name='idx_src_platform'").getSingle();
+    expect(idx.data['sql'] as String, contains('UNIQUE'));
+    await expectLater(
+        db.customStatement("INSERT INTO source_events (id, source, platform_id, text_hash, received_at, status, created_at) VALUES ('e3', 'shortcut', 'run-1', 'h', 0, 'x', 0)"),
+        throwsA(anything));
+    expect((await FinanceStore(db).transaction(tx.id))!.amountMinor, 5250);
+    expect((await db.customSelect('PRAGMA user_version').getSingle()).data.values.first, 3);
     await db.close();
     await dir.delete(recursive: true);
   });

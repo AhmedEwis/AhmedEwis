@@ -23,6 +23,16 @@
 - `captureMain` opens the same SQLite3MultipleCiphers database with the same schema and migrations, and runs the same deterministic `IngestionService`.
 - Cloud AI fallback is **not** used headlessly.
 - Items are acknowledged only after durable processing. A crash before acknowledgement replays safely, because platform IDs make ingestion idempotent (`test/core/capture_recovery_test.dart`).
+- **Ingestion is one database transaction** (`IngestionService.ingest`):
+  1. It claims the source event first, with `INSERT OR IGNORE` against the unique index `(source, platform_id)` (schema v3; the migration renames any pre-existing duplicates rather than deleting them).
+  2. It then makes the financial writes.
+  3. It completes the source event.
+
+  A crash at any point rolls back everything. Because the claim is the first write, a second connection (UI engine vs headless engine) waits on SQLite's write lock, then sees the claim and returns `duplicate`. A failed event isn't acknowledged and stays in the inbox; the rest of the inbox continues.
+- **Events without a stable platform ID:**
+  - Paste and manual events are always processed. Identical text within 3 minutes is flagged *possible duplicate* for review, never dropped.
+  - Shortcuts give a new run ID each time, so the same message text via Shortcuts within 24 hours is treated as a replay: it's recorded as `duplicate`, linked to the original and not counted again, and the Shortcut banner says *"Already in Fils"*.
+  - Wallet events are excluded from that rule, because identical fields are normal for genuine repeat purchases.
 
 **Data protection is not weakened:**
 - The database key stays in the Keychain or Keystore with `first_unlock_this_device`.

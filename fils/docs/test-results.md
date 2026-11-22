@@ -6,6 +6,31 @@ Only checks that were actually run are listed.
 - **CI:** GitHub Actions (ubuntu-24.04, macos-15).
 - **Devices:** no physical iPhone or Android device, and no emulator (no KVM).
 
+## 0. Codex ingestion review: reproduce, fix, regression-test
+
+Every test below was first run against the unfixed code (`0be447d`), with only a no-op test hook added so it compiles. **11 of the 16 new tests failed there**, which reproduces every reported issue. The other 5 are guards against overcorrection (same-source decline, repeated purchases, linking with evidence, the existing unique index, paste without an ID). With the fixes, all of them pass.
+
+| Issue | Regression test (file → test) | Before fix | After fix |
+|---|---|---|---|
+| 1. Crash after the financial write, before the source event completes | `ingestion_review_test` → *failure after the financial insert…* | **FAIL**: transaction left behind with no source event | pass: nothing persisted; replay posts once, then `duplicate` |
+| 1. Replay after restart | same test, plus `capture_recovery_test` → *process killed… replay* and *an event whose ingestion fails is not acked or lost* | n/a (new) | pass |
+| 1. Concurrent ingestion over two connections (same file, WAL) | `ingestion_review_test` → *concurrent ingestion…* (1 shared event plus 20 distinct events × 2 connections) | **FAIL**: `SqliteException(2067) UNIQUE constraint failed` after the 2nd connection had already inserted its transaction | pass: exactly one transaction per event, none lost |
+| 1. Unique index on upgraded databases; missing IDs | `household_migration_test` → *v2 → v3…*; `ingestion_review_test` → *events without a platform id…* | n/a (new) | pass: duplicates renamed `#dup-<id>`, not deleted; index enforced; paste without an ID is processed and flagged |
+| 2. Declined → successful purchase | *declined then successful purchase (cross-source)* | **FAIL**: merged into the declined row (purchase lost) | pass |
+| 2. Pending → settlement through another source | *pending (SMS) then settlement…* | **FAIL**: `merged` instead of `settledPending` (pending row never settled) | pass |
+| 2. Reversed/voided → new purchase | *reversed/voided authorization then a new purchase* | **FAIL**: merged into the voided row | pass |
+| 3. Same amount and merchant on different known accounts | *identical amount/merchant on two different known accounts* | **FAIL**: merged into 1 | pass: 2 |
+| 3. Wallet first (Unassigned), bank second | *Wallet first…* | **FAIL**: 2 transactions | pass: 1, moved to the bank account; Unassigned balance 0 |
+| 3. Bank first, Wallet second | *bank message first, Wallet second* | **FAIL**: Unassigned account created | pass |
+| 3. Two genuine repeated purchases | *two genuine repeated purchases* | pass | pass |
+| 3. Ambiguous match | *ambiguous match (two candidates) goes to review* | **FAIL**: silently merged | pass: review |
+| 4. Unrelated KWD 20 in and KWD 20 out | *unrelated incoming KWD 20 and outgoing KWD 20…* | **FAIL**: linked as an internal transfer | pass: separate |
+| 4. Same amount, no evidence | *same amount without evidence is flagged…* | **FAIL**: auto-linked | pass: separate, one flagged for the user to confirm |
+| 4. Evidence (message names the owned counter account) | *outgoing that references the receiving owned account* | pass | pass |
+| Device scenario: Shortcut retry of the same SMS | `capture_recovery_test` → *the same SMS imported twice through Shortcuts…*; `device_scenario_test` | Found during this review: each Shortcut run has a new ID, so a retry double-posted | pass: counted once; retries recorded as `duplicate` |
+
+**Full run after the fixes:** `FILS_E2E_API=http://127.0.0.1:8099 flutter test test/core test/perf test/e2e` → **148 passed, 0 failed**. `flutter analyze` → **0 errors, 0 warnings**. The backend is unchanged in this round.
+
 ## 1. Automated tests
 
 | Suite | Command | Result | Commit |

@@ -27,6 +27,7 @@ final class HeadlessCapture {
     let posted: Int
     let review: Int
     let ignored: Int
+    let duplicate: Int
     let queued: Int
     let lastLine: String?
     let error: String?
@@ -52,7 +53,7 @@ final class HeadlessCapture {
     guard let r = result else { return nil }
     return Summary(
       posted: r["posted"] as? Int ?? 0, review: r["review"] as? Int ?? 0, ignored: r["ignored"] as? Int ?? 0,
-      queued: r["queued"] as? Int ?? CaptureInbox.shared.count, lastLine: r["last"] as? String, error: r["error"] as? String)
+      duplicate: r["duplicate"] as? Int ?? 0, queued: r["queued"] as? Int ?? CaptureInbox.shared.count, lastLine: r["last"] as? String, error: r["error"] as? String)
   }
 
   private func awaitDone() async -> [String: Any] {

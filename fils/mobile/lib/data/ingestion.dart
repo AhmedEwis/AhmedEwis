@@ -42,7 +42,11 @@ class IngestionService {
   final FinanceStore store;
   final AiExtractor? ai;
   final int maxTextLength;
-  IngestionService(this.store, {this.ai, this.maxTextLength = 2000});
+
+  /// Test hook: called at named stages inside the atomic section, to simulate a crash
+  /// (by throwing) at the worst possible moment. Null in production.
+  final void Function(String stage)? faultInjector;
+  IngestionService(this.store, {this.ai, this.maxTextLength = 2000, this.faultInjector});
 
   AppDatabase get db => store.db;
 
@@ -50,7 +54,6 @@ class IngestionService {
       sha256.convert(utf8.encode(normalizeForMatch(text).replaceAll(RegExp(r'\s+'), ' ').trim())).toString();
 
   Future<IngestResult> ingest(RawEvent e) async {
-    final now = store.now;
     final eventId = newId();
     final text = e.text.length > maxTextLength ? e.text.substring(0, maxTextLength) : e.text;
     final hash = textHash(e.source == SourceKind.wallet ? jsonEncode(e.fields ?? {}) : text);
@@ -60,21 +63,20 @@ class IngestionService {
       return IngestResult(IngestOutcome.ignored, eventId, message: 'empty');
     }
 
-    // Replay protection: the same platform id from the same source is the same event.
+    // Fast replay check (no lock). The authoritative check is the claim inside the
+    // transaction below, backed by the unique index on (source, platform_id).
     if (e.sourceId != null) {
-      final dup = await (db.select(db.sourceEvents)
-            ..where((s) => s.source.equals(e.source.name) & s.platformId.equals(e.sourceId!)))
-          .getSingleOrNull();
+      final dup = await _existingClaim(e);
       if (dup != null) {
         return IngestResult(IngestOutcome.duplicate, dup.id, transactionId: dup.transactionId, message: 'replayed event');
       }
     }
 
+    // Parsing (and the optional network AI fallback) runs outside the database
+    // transaction, so no lock is held during I/O.
     final aliases = await store.merchantAliasMap();
     final base = await store.baseCurrency();
     var parsed = KuwaitParser(homeCurrency: base, userAliases: aliases).parse(e);
-
-    // Optional, consented AI fallback, only for financial-looking text we couldn't read.
     if ((parsed.kind == TxKind.unknown && parsed.confidence >= 0.3 || parsed.needsReview) && ai != null) {
       try {
         final aiParsed = await ai!.extract(e);
@@ -84,32 +86,110 @@ class IngestionService {
       }
     }
 
-    Future<void> recordEvent(String status, {String? txId, bool keepRaw = false, String? notes}) async {
-      final retainDays = int.tryParse(await store.getSetting(SettingKeys.retainRawDays) ?? '') ?? 30;
-      await db.into(db.sourceEvents).insert(SourceEventsCompanion.insert(
+    // ATOMIC SECTION. Claiming the event, every financial write and completing the
+    // source event commit together or not at all. A crash anywhere inside leaves no
+    // trace, so the native inbox (which acks only after this returns) replays it safely.
+    // The claim is the transaction's first statement, a write, so a second connection
+    // (UI engine vs headless engine) blocks on SQLite's write lock instead of racing; it
+    // then sees the committed claim and reports a duplicate.
+    try {
+      return await db.transaction(() => _ingestLocked(e, eventId, text, hash, parsed, aliases));
+    } catch (_) {
+      // The whole unit rolled back. If another connection committed this platform event
+      // meanwhile (a unique-constraint race), that's a duplicate, not a failure. Anything
+      // else is rethrown, and the event stays un-acked in the native inbox for a retry.
+      if (e.sourceId != null) {
+        final dup = await _existingClaim(e);
+        if (dup != null && dup.id != eventId) {
+          return IngestResult(IngestOutcome.duplicate, dup.id, transactionId: dup.transactionId, message: 'replayed event');
+        }
+      }
+      rethrow;
+    }
+  }
+
+  Future<SourceEventRow?> _existingClaim(RawEvent e) => (db.select(db.sourceEvents)
+        ..where((s) => s.source.equals(e.source.name) & s.platformId.equals(e.sourceId!)))
+      .getSingleOrNull();
+
+  Future<IngestResult> _ingestLocked(
+      RawEvent e, String eventId, String text, String hash, ParsedEvent parsed, Map<String, (String, String?)> aliases) async {
+    final now = store.now;
+
+    // 1. Claim. INSERT OR IGNORE against the unique index: if another connection or an
+    // earlier run already claimed this platform event, nothing is written here.
+    // Events with no platform id (paste, manual, some imports) can't be claimed by
+    // identity. They're always processed, and an identical text seen moments earlier is
+    // flagged as a possible duplicate for review, never dropped.
+    await db.into(db.sourceEvents).insert(
+          SourceEventsCompanion.insert(
             id: eventId,
             source: e.source.name,
-            sender: Value(e.sender),
-            packageName: Value(e.packageName),
             platformId: Value(e.sourceId),
             textHash: hash,
-            // OTPs are never stored; raw text is kept only for review items, then purged.
-            rawText: Value(keepRaw && parsed.kind != TxKind.otp ? text : null),
             receivedAt: e.receivedAt.toUtc(),
-            status: status,
-            kind: Value(parsed.kind.name),
-            parserId: Value(parsed.parserId),
-            parserVersion: Value(parsed.parserVersion),
-            transactionId: Value(txId),
-            bankId: Value(parsed.bankId),
-            notes: Value(notes ?? (parsed.notes.isEmpty ? null : parsed.notes.join(' | '))),
-            purgeAfter: Value(keepRaw ? now.add(Duration(days: retainDays)) : null),
+            status: 'processing',
             createdAt: now,
-          ));
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+    if (e.sourceId != null) {
+      final owner = await _existingClaim(e);
+      if (owner != null && owner.id != eventId) {
+        return IngestResult(IngestOutcome.duplicate, owner.id, transactionId: owner.transactionId, message: 'replayed event');
+      }
+    }
+
+    // 3. Completion: fills in the claimed row. Runs in the same transaction as the
+    // financial writes that came before it.
+    Future<void> recordEvent(String status, {String? txId, bool keepRaw = false, String? notes}) async {
+      faultInjector?.call('after_financial_write');
+      final retainDays = int.tryParse(await store.getSetting(SettingKeys.retainRawDays) ?? '') ?? 30;
+      await (db.update(db.sourceEvents)..where((s) => s.id.equals(eventId))).write(SourceEventsCompanion(
+        sender: Value(e.sender),
+        packageName: Value(e.packageName),
+        // OTPs are never stored; raw text is kept only for review items, then purged.
+        rawText: Value(keepRaw && parsed.kind != TxKind.otp ? text : null),
+        status: Value(status),
+        kind: Value(parsed.kind.name),
+        parserId: Value(parsed.parserId),
+        parserVersion: Value(parsed.parserVersion),
+        transactionId: Value(txId),
+        bankId: Value(parsed.bankId),
+        counterLast4: Value(parsed.counterAccountLast4),
+        notes: Value(notes ?? (parsed.notes.isEmpty ? null : parsed.notes.join(' | '))),
+        purgeAfter: Value(keepRaw ? now.add(Duration(days: retainDays)) : null),
+      ));
       await store.setSetting(SettingKeys.lastCaptureAt, now.toIso8601String());
       await store.setSetting(SettingKeys.lastCaptureSource, e.source.name);
     }
 
+    // Shortcut automations give every run a fresh id, so the platform id can't detect a
+    // retry of the same SMS (the automation re-running, or the user tapping it again).
+    // Defined handling: the exact same message text via Shortcuts within 24 hours is a
+    // replay. It's recorded (status "duplicate", linked to the original) and not counted
+    // again. Bank SMS normally carry a time, balance or reference, so two real purchases
+    // rarely produce byte-identical text; if they do, the user sees "Already in Fils" and
+    // can add the second one by hand. Wallet events are excluded: identical Wallet fields
+    // are expected for genuine repeat purchases.
+    if (e.source == SourceKind.shortcut) {
+      final prior = await (db.select(db.sourceEvents)
+            ..where((s) =>
+                s.id.isNotValue(eventId) &
+                s.source.equals(e.source.name) &
+                s.textHash.equals(hash) &
+                s.status.isNotIn(const ['processing', 'duplicate']) &
+                s.receivedAt.isBiggerOrEqualValue(e.receivedAt.toUtc().subtract(const Duration(hours: 24))) &
+                s.receivedAt.isSmallerOrEqualValue(e.receivedAt.toUtc().add(const Duration(hours: 24))))
+            ..limit(1))
+          .getSingleOrNull();
+      if (prior != null) {
+        await recordEvent('duplicate', txId: prior.transactionId, notes: 'Same message text already imported via Shortcuts; not counted again.');
+        return IngestResult(IngestOutcome.duplicate, eventId, transactionId: prior.transactionId, parsed: parsed, message: 'shortcut retry');
+      }
+    }
+
+    // 2. Financial classification and writes.
     // Non-financial messages are ignored.
     if (parsed.kind == TxKind.otp || parsed.kind == TxKind.promo) {
       await recordEvent('ignored');
@@ -138,6 +218,7 @@ class IngestionService {
     // silently drop: identical purchases are real (two coffees). Flag for review instead.
     final recentSame = await (db.select(db.sourceEvents)
           ..where((s) =>
+              s.id.isNotValue(eventId) &
               s.textHash.equals(hash) &
               s.receivedAt.isBiggerOrEqualValue(e.receivedAt.subtract(const Duration(minutes: 3))) &
               s.receivedAt.isSmallerOrEqualValue(e.receivedAt.add(const Duration(minutes: 3)))))
@@ -151,54 +232,22 @@ class IngestionService {
       return IngestResult(IngestOutcome.merged, eventId, transactionId: txId, parsed: parsed, message: 'cross-source duplicate');
     }
 
-    final acct = account ?? await _autoCreateAccount(parsed);
-    if (parsed.balance != null || parsed.available != null) {
-      await store.setReportedBalance(acct.id,
-          balance: _sameCur(parsed.balance, acct), available: _sameCur(parsed.available, acct), at: e.receivedAt);
+    if (account != null && (parsed.balance != null || parsed.available != null)) {
+      await store.setReportedBalance(account.id,
+          balance: _sameCur(parsed.balance, account), available: _sameCur(parsed.available, account), at: e.receivedAt);
     }
     final occurredAt = parsed.occurredAt ?? e.receivedAt.toUtc();
     final amount = parsed.amount!;
 
-    // Semantic cross-source dedupe: Wallet + bank SMS, or SMS + notification with
-    // different wording. Requires a different source kind, the same account (or an
-    // unknown card on one side), the same amount and currency, a compatible merchant and a
-    // time within 10 minutes. Amount plus merchant alone is never enough.
-    final windowStart = occurredAt.subtract(const Duration(minutes: 10));
-    final windowEnd = occurredAt.add(const Duration(minutes: 10));
-    final candidates = await (db.select(db.transactions)
-          ..where((t) =>
-              t.deletedAt.isNull() &
-              t.amountMinor.equals(amount.minor) &
-              t.currency.equals(amount.currency) &
-              t.occurredAt.isBiggerOrEqualValue(windowStart) &
-              t.occurredAt.isSmallerOrEqualValue(windowEnd) &
-              t.source.isNotValue(_txSource(e.source))))
-        .get();
-    for (final c in candidates) {
-      final merchantOk = c.merchant == null || parsed.merchant == null || c.merchant == parsed.merchant;
-      final accountOk = c.accountId == acct.id || parsed.cardLast4 == null || e.source == SourceKind.wallet;
-      if (merchantOk && accountOk && _kindCompatible(c, parsed)) {
-        // Prefer richer data (bank SMS over Wallet): fill gaps only, never overwrite.
-        await store.updateTransaction(
-          c.id,
-          TransactionsCompanion(
-            merchant: c.merchant == null && parsed.merchant != null ? Value(parsed.merchant) : const Value.absent(),
-            merchantRaw: c.merchantRaw == null && parsed.merchantRaw != null ? Value(parsed.merchantRaw) : const Value.absent(),
-          ),
-          action: 'merge',
-        );
-        await recordEvent('merged', txId: c.id, notes: 'matched ${c.source} transaction');
-        return IngestResult(IngestOutcome.merged, eventId, transactionId: c.id, parsed: parsed, message: 'cross-source match');
-      }
-    }
-
-    // A settlement of an earlier pending authorization updates the pending row in place (I6).
-    if (parsed.status == TxStatus.posted && (parsed.kind == TxKind.purchase)) {
+    // A settlement of an earlier pending authorization updates the pending row in place
+    // (I6). This runs before cross-source matching, so a settlement that arrives through
+    // another channel (notification after SMS) still settles the pending row.
+    if (account != null && parsed.status == TxStatus.posted && parsed.kind == TxKind.purchase) {
       final pend = await (db.select(db.transactions)
             ..where((t) =>
                 t.deletedAt.isNull() &
                 t.status.equals(TxStatuses.pending) &
-                t.accountId.equals(acct.id) &
+                t.accountId.equals(account.id) &
                 t.occurredAt.isBiggerOrEqualValue(occurredAt.subtract(const Duration(days: 10))) &
                 t.occurredAt.isSmallerOrEqualValue(occurredAt.add(const Duration(minutes: 5)))))
           .get();
@@ -221,8 +270,80 @@ class IngestionService {
       }
     }
 
+    // Semantic cross-source dedupe: Wallet + bank SMS, or SMS + notification with
+    // different wording. Requirements:
+    //  - a different source kind, the same amount and currency, within 10 minutes;
+    //  - a compatible merchant and a compatible kind *and status*: a successful purchase
+    //    never matches a declined or voided row, and a decline matches only a decline;
+    //  - no conflicting known accounts (see [_accountsCompatible]);
+    //  - the candidate isn't already paired with an event from this same source (two
+    //    genuine identical purchases stay two).
+    // Exactly one match merges. More than one is ambiguous and goes to review.
+    final windowStart = occurredAt.subtract(const Duration(minutes: 10));
+    final windowEnd = occurredAt.add(const Duration(minutes: 10));
+    final isDecline = parsed.kind == TxKind.declined;
+    final candidates = await (db.select(db.transactions)
+          ..where((t) =>
+              t.deletedAt.isNull() &
+              t.amountMinor.equals(amount.minor) &
+              t.currency.equals(amount.currency) &
+              t.occurredAt.isBiggerOrEqualValue(windowStart) &
+              t.occurredAt.isSmallerOrEqualValue(windowEnd) &
+              t.source.isNotValue(_txSource(e.source)) &
+              (isDecline ? t.status.equals(TxStatuses.declined) : t.status.isIn([TxStatuses.posted, TxStatuses.pending]))))
+        .get();
+    final allAccounts = {for (final a in await store.accounts()) a.id: a};
+    final matches = <TxRow>[];
+    for (final c in candidates) {
+      final merchantOk = c.merchant == null || parsed.merchant == null || c.merchant == parsed.merchant;
+      if (!merchantOk || !_kindCompatible(c, parsed)) continue;
+      if (!_accountsCompatible(allAccounts[c.accountId], account, parsed)) continue;
+      final paired = await (db.select(db.sourceEvents)
+            ..where((s) => s.transactionId.equals(c.id) & s.source.equals(e.source.name) & s.id.isNotValue(eventId)))
+          .get();
+      if (paired.isNotEmpty) continue;
+      matches.add(c);
+    }
+    var ambiguous = false;
+    if (matches.length == 1) {
+      final c = matches.single;
+      final cAcct = allAccounts[c.accountId];
+      // An Unassigned transaction (e.g. Wallet with no card) that a bank message now
+      // reliably identifies moves to that account. Its ledger effect moves with it,
+      // atomically (same transaction).
+      String? moveTo;
+      if (_isUnassigned(cAcct) && _identifies(account, parsed)) {
+        moveTo = (account ?? await _autoCreateAccount(parsed)).id;
+        if (parsed.balance != null || parsed.available != null) {
+          final target = (await store.account(moveTo))!;
+          await store.setReportedBalance(moveTo,
+              balance: _sameCur(parsed.balance, target), available: _sameCur(parsed.available, target), at: e.receivedAt);
+        }
+      }
+      // Prefer richer data (bank SMS over Wallet): fill gaps only, never overwrite.
+      await store.updateTransaction(
+        c.id,
+        TransactionsCompanion(
+          accountId: moveTo != null ? Value(moveTo) : const Value.absent(),
+          merchant: c.merchant == null && parsed.merchant != null ? Value(parsed.merchant) : const Value.absent(),
+          merchantRaw: c.merchantRaw == null && parsed.merchantRaw != null ? Value(parsed.merchantRaw) : const Value.absent(),
+        ),
+        action: 'merge',
+      );
+      await recordEvent('merged', txId: c.id, notes: 'matched ${c.source} transaction${moveTo != null ? '; moved from Unassigned' : ''}');
+      return IngestResult(IngestOutcome.merged, eventId, transactionId: c.id, parsed: parsed, message: 'cross-source match');
+    } else if (matches.length > 1) {
+      ambiguous = true;
+    }
+
+    final acct = account ?? await _autoCreateAccount(parsed);
+    if (account == null && (parsed.balance != null || parsed.available != null)) {
+      await store.setReportedBalance(acct.id,
+          balance: _sameCur(parsed.balance, acct), available: _sameCur(parsed.available, acct), at: e.receivedAt);
+    }
+
     final possibleDup = sameSourceSameText.isNotEmpty && e.sourceId == null;
-    final needsReview = parsed.needsReview || possibleDup;
+    final needsReview = parsed.needsReview || possibleDup || ambiguous;
     final mm = parsed.merchant != null ? matchMerchant(parsed.merchantRaw ?? parsed.merchant, userAliases: aliases) : null;
     final category = _category(parsed, mm);
     final common = (
@@ -275,13 +396,19 @@ class IngestionService {
         tx = await _add(acct.id, TxKinds.expense, amount.minor, common, parsed, eventId,
             status: parsed.status == TxStatus.pending ? TxStatuses.pending : TxStatuses.posted,
             category: category,
-            review: needsReview);
+            review: needsReview,
+            note: ambiguous ? 'Matches more than one captured transaction: confirm it is not a duplicate.' : null);
     }
 
-    await recordEvent(needsReview ? 'review' : 'posted', txId: tx.id, keepRaw: needsReview,
-        notes: possibleDup ? 'Identical message received moments ago: confirm it is a separate purchase.' : null);
+    final txReview = tx.needsReview;
+    await recordEvent(txReview ? 'review' : 'posted', txId: tx.id, keepRaw: txReview,
+        notes: possibleDup
+            ? 'Identical message received moments ago: confirm it is a separate purchase.'
+            : ambiguous
+                ? 'Ambiguous cross-source match (${matches.length} candidates); sent to review.'
+                : null);
     return IngestResult(
-      possibleDup ? IngestOutcome.possibleDuplicate : (needsReview ? IngestOutcome.review : IngestOutcome.posted),
+      possibleDup ? IngestOutcome.possibleDuplicate : (txReview ? IngestOutcome.review : IngestOutcome.posted),
       eventId,
       transactionId: tx.id,
       parsed: parsed,
@@ -290,9 +417,36 @@ class IngestionService {
 
   int? _sameCur(dynamic m, AccountRow a) => (m != null && m.currency == a.currency) ? m.minor as int : null;
 
+  static bool _isUnassigned(AccountRow? a) => a == null || a.institutionId == '_unassigned';
+
+  /// Whether the incoming event carries account identity (a known account, a card or
+  /// account number, or a bank).
+  static bool _identifies(AccountRow? matched, ParsedEvent p) =>
+      matched != null || p.cardLast4 != null || p.accountLast4 != null || p.bankId != null;
+
+  /// No automatic merge across conflicting known accounts:
+  ///  - same account → compatible;
+  ///  - candidate on Unassigned → compatible (the incoming event may identify it);
+  ///  - incoming event carries no account identity at all (e.g. Wallet without a card)
+  ///    → compatible with the candidate's account;
+  ///  - incoming names only the bank (no digits) and the candidate is on that bank →
+  ///    compatible;
+  ///  - anything else (different known account, or digits that don't match) → not.
+  bool _accountsCompatible(AccountRow? candidate, AccountRow? incoming, ParsedEvent p) {
+    if (candidate == null) return false;
+    if (incoming != null && candidate.id == incoming.id) return true;
+    if (_isUnassigned(candidate)) return true;
+    if (!_identifies(incoming, p)) return true;
+    final digits = p.cardLast4 ?? p.accountLast4;
+    if (incoming == null && digits == null && p.bankId != null) return candidate.institutionId == p.bankId;
+    return false;
+  }
+
   bool _kindCompatible(TxRow c, ParsedEvent p) {
+    if (p.kind == TxKind.declined) return c.kind == TxKinds.expense && c.status == TxStatuses.declined;
+    if (c.status == TxStatuses.declined || c.status == TxStatuses.voided) return false;
     final pk = switch (p.kind) {
-      TxKind.purchase || TxKind.installment || TxKind.fee || TxKind.declined => TxKinds.expense,
+      TxKind.purchase || TxKind.installment || TxKind.fee => TxKinds.expense,
       TxKind.income || TxKind.salary => TxKinds.income,
       TxKind.refund || TxKind.reversal => TxKinds.refund,
       _ => TxKinds.transfer,
@@ -363,10 +517,14 @@ class IngestionService {
         needsReview: review,
       );
 
-  /// A transfer leg. If the opposite leg was already captured on another owned account
-  /// (same amount and currency, within 30 minutes), merge both into one internal transfer
-  /// (I2). Otherwise record an external transfer: outgoing counts as money sent to others,
-  /// incoming as other income. The user can relink either later.
+  /// A transfer leg. Two legs on different owned accounts are merged into one internal
+  /// transfer (I2) only on reliable evidence: one message names the other account's
+  /// digits ("to account XXXX9012"), and those digits belong to the account the opposite
+  /// leg is on. Amount, currency and timing alone are never enough: an unrelated KWD 20
+  /// received and a KWD 20 sent stay separate. Without evidence, a same-amount opposite
+  /// leg within 30 minutes only flags the new leg for review, so the user can confirm it
+  /// with "Link as transfer". Otherwise this records an external transfer: outgoing
+  /// counts as money sent to others, incoming as other income.
   Future<TxRow> _transferLeg(AccountRow acct, int amount, dynamic c, ParsedEvent p, String eventId, bool review) async {
     final out = p.kind == TxKind.transferOut;
     final t0 = (c.occurredAt as DateTime).subtract(const Duration(minutes: 30));
@@ -375,6 +533,7 @@ class IngestionService {
           ..where((t) =>
               t.deletedAt.isNull() &
               t.accountId.isNotValue(acct.id) &
+              t.transferGroupId.isNull() &
               t.amountMinor.equals(amount) &
               t.currency.equals(c.currency as String) &
               t.kind.equals(out ? TxKinds.income : TxKinds.expense) &
@@ -382,14 +541,35 @@ class IngestionService {
               t.occurredAt.isBiggerOrEqualValue(t0) &
               t.occurredAt.isSmallerOrEqualValue(t1)))
         .get();
-    if (opposite.isNotEmpty) {
-      final other = opposite.first;
+    final accounts = {for (final a in await store.accounts()) a.id: a};
+    final evidenced = <TxRow>[];
+    for (final o in opposite) {
+      final oAcct = accounts[o.accountId];
+      // This message names the opposite leg's account.
+      final forward = p.counterAccountLast4 != null && oAcct?.maskLast4 == p.counterAccountLast4;
+      // The opposite leg's message named this account.
+      var backward = false;
+      if (o.sourceEventId != null && acct.maskLast4 != null) {
+        final se = await (db.select(db.sourceEvents)..where((s) => s.id.equals(o.sourceEventId!))).getSingleOrNull();
+        backward = se?.counterLast4 != null && se!.counterLast4 == acct.maskLast4;
+      }
+      if (forward || backward) evidenced.add(o);
+    }
+    if (evidenced.length == 1) {
+      final other = evidenced.single;
       final leg = await _add(acct.id, out ? TxKinds.expense : TxKinds.income, amount, c, p, eventId,
           category: out ? Cat.transfers : Cat.otherIncome);
       return out ? store.linkAsTransfer(leg.id, other.id) : store.linkAsTransfer(other.id, leg.id);
     }
+    // The counter account is named and isn't one of ours → definitely external.
+    final namedExternal = p.counterAccountLast4 != null && !accounts.values.any((a) => a.maskLast4 == p.counterAccountLast4);
+    final suggest = !namedExternal && opposite.isNotEmpty;
     return _add(acct.id, out ? TxKinds.expense : TxKinds.income, amount, c, p, eventId,
-        category: out ? Cat.transfers : Cat.otherIncome, review: review);
+        category: out ? Cat.transfers : Cat.otherIncome,
+        review: review || suggest,
+        note: suggest
+            ? 'Possible transfer between your accounts (same amount ${out ? 'received' : 'sent'} nearby). Link as transfer if so.'
+            : null);
   }
 
   Future<TxRow> _refundOrReversal(AccountRow acct, int amount, dynamic c, ParsedEvent p, String eventId, String category, bool review) async {

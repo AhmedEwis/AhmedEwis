@@ -3540,6 +3540,17 @@ class $SourceEventsTable extends SourceEvents
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _counterLast4Meta = const VerificationMeta(
+    'counterLast4',
+  );
+  @override
+  late final GeneratedColumn<String> counterLast4 = GeneratedColumn<String>(
+    'counter_last4',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3559,6 +3570,7 @@ class $SourceEventsTable extends SourceEvents
     notes,
     purgeAfter,
     createdAt,
+    counterLast4,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3692,6 +3704,15 @@ class $SourceEventsTable extends SourceEvents
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('counter_last4')) {
+      context.handle(
+        _counterLast4Meta,
+        counterLast4.isAcceptableOrUnknown(
+          data['counter_last4']!,
+          _counterLast4Meta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3769,6 +3790,10 @@ class $SourceEventsTable extends SourceEvents
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      counterLast4: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}counter_last4'],
+      ),
     );
   }
 
@@ -3796,6 +3821,9 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
   final String? notes;
   final DateTime? purgeAfter;
   final DateTime createdAt;
+
+  /// v3: the other account named by a transfer message (last 4), kept as linking evidence.
+  final String? counterLast4;
   const SourceEventRow({
     required this.id,
     required this.source,
@@ -3814,6 +3842,7 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
     this.notes,
     this.purgeAfter,
     required this.createdAt,
+    this.counterLast4,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3857,6 +3886,9 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
       map['purge_after'] = Variable<DateTime>(purgeAfter);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || counterLast4 != null) {
+      map['counter_last4'] = Variable<String>(counterLast4);
+    }
     return map;
   }
 
@@ -3899,6 +3931,9 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
           ? const Value.absent()
           : Value(purgeAfter),
       createdAt: Value(createdAt),
+      counterLast4: counterLast4 == null && nullToAbsent
+          ? const Value.absent()
+          : Value(counterLast4),
     );
   }
 
@@ -3925,6 +3960,7 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
       notes: serializer.fromJson<String?>(json['notes']),
       purgeAfter: serializer.fromJson<DateTime?>(json['purgeAfter']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      counterLast4: serializer.fromJson<String?>(json['counterLast4']),
     );
   }
   @override
@@ -3948,6 +3984,7 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
       'notes': serializer.toJson<String?>(notes),
       'purgeAfter': serializer.toJson<DateTime?>(purgeAfter),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'counterLast4': serializer.toJson<String?>(counterLast4),
     };
   }
 
@@ -3969,6 +4006,7 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
     Value<String?> notes = const Value.absent(),
     Value<DateTime?> purgeAfter = const Value.absent(),
     DateTime? createdAt,
+    Value<String?> counterLast4 = const Value.absent(),
   }) => SourceEventRow(
     id: id ?? this.id,
     source: source ?? this.source,
@@ -3991,6 +4029,7 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
     notes: notes.present ? notes.value : this.notes,
     purgeAfter: purgeAfter.present ? purgeAfter.value : this.purgeAfter,
     createdAt: createdAt ?? this.createdAt,
+    counterLast4: counterLast4.present ? counterLast4.value : this.counterLast4,
   );
   SourceEventRow copyWithCompanion(SourceEventsCompanion data) {
     return SourceEventRow(
@@ -4023,6 +4062,9 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
           ? data.purgeAfter.value
           : this.purgeAfter,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      counterLast4: data.counterLast4.present
+          ? data.counterLast4.value
+          : this.counterLast4,
     );
   }
 
@@ -4045,7 +4087,8 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
           ..write('bankId: $bankId, ')
           ..write('notes: $notes, ')
           ..write('purgeAfter: $purgeAfter, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('counterLast4: $counterLast4')
           ..write(')'))
         .toString();
   }
@@ -4069,6 +4112,7 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
     notes,
     purgeAfter,
     createdAt,
+    counterLast4,
   );
   @override
   bool operator ==(Object other) =>
@@ -4090,7 +4134,8 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
           other.bankId == this.bankId &&
           other.notes == this.notes &&
           other.purgeAfter == this.purgeAfter &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.counterLast4 == this.counterLast4);
 }
 
 class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
@@ -4111,6 +4156,7 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
   final Value<String?> notes;
   final Value<DateTime?> purgeAfter;
   final Value<DateTime> createdAt;
+  final Value<String?> counterLast4;
   final Value<int> rowid;
   const SourceEventsCompanion({
     this.id = const Value.absent(),
@@ -4130,6 +4176,7 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
     this.notes = const Value.absent(),
     this.purgeAfter = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.counterLast4 = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SourceEventsCompanion.insert({
@@ -4150,6 +4197,7 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
     this.notes = const Value.absent(),
     this.purgeAfter = const Value.absent(),
     required DateTime createdAt,
+    this.counterLast4 = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        source = Value(source),
@@ -4175,6 +4223,7 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
     Expression<String>? notes,
     Expression<DateTime>? purgeAfter,
     Expression<DateTime>? createdAt,
+    Expression<String>? counterLast4,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4195,6 +4244,7 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
       if (notes != null) 'notes': notes,
       if (purgeAfter != null) 'purge_after': purgeAfter,
       if (createdAt != null) 'created_at': createdAt,
+      if (counterLast4 != null) 'counter_last4': counterLast4,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4217,6 +4267,7 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
     Value<String?>? notes,
     Value<DateTime?>? purgeAfter,
     Value<DateTime>? createdAt,
+    Value<String?>? counterLast4,
     Value<int>? rowid,
   }) {
     return SourceEventsCompanion(
@@ -4237,6 +4288,7 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
       notes: notes ?? this.notes,
       purgeAfter: purgeAfter ?? this.purgeAfter,
       createdAt: createdAt ?? this.createdAt,
+      counterLast4: counterLast4 ?? this.counterLast4,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4295,6 +4347,9 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (counterLast4.present) {
+      map['counter_last4'] = Variable<String>(counterLast4.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4321,6 +4376,7 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
           ..write('notes: $notes, ')
           ..write('purgeAfter: $purgeAfter, ')
           ..write('createdAt: $createdAt, ')
+          ..write('counterLast4: $counterLast4, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -13532,6 +13588,7 @@ typedef $$SourceEventsTableCreateCompanionBuilder =
       Value<String?> notes,
       Value<DateTime?> purgeAfter,
       required DateTime createdAt,
+      Value<String?> counterLast4,
       Value<int> rowid,
     });
 typedef $$SourceEventsTableUpdateCompanionBuilder =
@@ -13553,6 +13610,7 @@ typedef $$SourceEventsTableUpdateCompanionBuilder =
       Value<String?> notes,
       Value<DateTime?> purgeAfter,
       Value<DateTime> createdAt,
+      Value<String?> counterLast4,
       Value<int> rowid,
     });
 
@@ -13647,6 +13705,11 @@ class $$SourceEventsTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get counterLast4 => $composableBuilder(
+    column: $table.counterLast4,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -13744,6 +13807,11 @@ class $$SourceEventsTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get counterLast4 => $composableBuilder(
+    column: $table.counterLast4,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SourceEventsTableAnnotationComposer
@@ -13817,6 +13885,11 @@ class $$SourceEventsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get counterLast4 => $composableBuilder(
+    column: $table.counterLast4,
+    builder: (column) => column,
+  );
 }
 
 class $$SourceEventsTableTableManager
@@ -13867,6 +13940,7 @@ class $$SourceEventsTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime?> purgeAfter = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> counterLast4 = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SourceEventsCompanion(
                 id: id,
@@ -13886,6 +13960,7 @@ class $$SourceEventsTableTableManager
                 notes: notes,
                 purgeAfter: purgeAfter,
                 createdAt: createdAt,
+                counterLast4: counterLast4,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -13907,6 +13982,7 @@ class $$SourceEventsTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime?> purgeAfter = const Value.absent(),
                 required DateTime createdAt,
+                Value<String?> counterLast4 = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SourceEventsCompanion.insert(
                 id: id,
@@ -13926,6 +14002,7 @@ class $$SourceEventsTableTableManager
                 notes: notes,
                 purgeAfter: purgeAfter,
                 createdAt: createdAt,
+                counterLast4: counterLast4,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

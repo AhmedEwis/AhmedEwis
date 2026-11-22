@@ -104,10 +104,15 @@ class CaptureService {
           done.add(m['id'] as String);
           continue;
         }
-        final r = await ingestion.ingest(ev);
-        _results.add(r);
-        done.add(m['id'] as String);
-        n++;
+        try {
+          final r = await ingestion.ingest(ev);
+          _results.add(r);
+          done.add(m['id'] as String);
+          n++;
+        } catch (_) {
+          // Ingestion is atomic: a failure leaves no partial state. The event stays in the
+          // native inbox (not acked) and is retried on the next drain; others continue.
+        }
       }
       await bridge.ack(done);
     } finally {

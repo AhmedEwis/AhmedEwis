@@ -13,10 +13,23 @@
 |---|---|
 | Repository | https://github.com/AhmedEwis/AhmedEwis |
 | Branch | `claude/kuwait-banks-aggregation-app-egj8k8` |
-| **Code commit under review** | **`2a0f1dad952374f6ec578c51087c05326f2b3e70`** (`2a0f1da`) |
-| This handoff file | Added in a later docs-only commit on top of `2a0f1da`. No code changes |
+| **Code commit under review** | The commit stated in the handoff message that came with this ZIP (round 3: ingestion fixes). The previous review covered `2a0f1da` |
+| What changed since your last review | See **Round 3** below and `fils/docs/test-results.md` §0 |
 | Product | Fils (working name): local-first personal finance app for Kuwait. Flutter (iOS/Android) + FastAPI/PostgreSQL backend + Azure Bicep |
 | Location | Everything lives under `fils/`. CI workflows are in the repo-root `.github/workflows/` |
+
+## Round 3: response to your ingestion review
+
+All four findings were reproduced with failing tests on the old code, then fixed. The results table is in `fils/docs/test-results.md` §0.
+
+| Finding | Fix (in `fils/mobile/lib/data/ingestion.dart` unless noted) |
+|---|---|
+| 1. Non-atomic ingestion and races | `ingest()` runs one `db.transaction`: claim (`INSERT OR IGNORE`, the first write, which takes the SQLite write lock) → financial writes → source-event completion. Parsing and AI run outside the transaction. Schema v3 (`db/database.dart`) re-asserts the unique index `(source, platform_id)` on upgraded databases, renaming any existing duplicates. `CaptureService.drain` leaves a failed event un-acked and continues. Defined handling for missing or non-stable IDs: see `capture-runtime.md` |
+| 2. Declined/pending/voided matching | Candidates are filtered by status: a decline matches only a decline, and a purchase never matches a declined or voided row. Pending settlement runs **before** cross-source matching |
+| 3. Account routing and Wallet | `_accountsCompatible`: no merge across conflicting known accounts. Candidates already paired with the same source are skipped. More than one match goes to review. An Unassigned Wallet transaction moves to the bank account the later message identifies, in the same transaction. Unassigned is not created when the bank message came first |
+| 4. Transfer false matches | Legs are linked only on evidence: the parser now extracts the counter account (`ParsedEvent.counterAccountLast4`, stored in `source_events.counter_last4`) and it must belong to the opposite leg's account. Without evidence, the leg is flagged for the user ("Link as transfer") |
+| Found while preparing the device test | A Shortcut retry double-posted, because each run has a new ID. Now an identical Shortcut text within 24 hours is a recorded duplicate, and the banner says "Already in Fils" |
+| Device path | `.github/workflows/ios-testflight.yml` (secret preflight, then archive, export, TestFlight upload), `ios/ExportOptions.plist`, `docs/device-acceptance.md` |
 
 ## Where to start (in order)
 

@@ -38,7 +38,7 @@ Future<Map<String, Object?>> runHeadlessCapture({CaptureBridge? bridge, FinanceS
   await svc.drain();
   await Future<void>.delayed(Duration.zero);
   await sub.cancel();
-  var posted = 0, review = 0, ignored = 0;
+  var posted = 0, review = 0, ignored = 0, duplicate = 0;
   String? last;
   for (final r in results) {
     switch (r.outcome) {
@@ -48,11 +48,13 @@ Future<Map<String, Object?>> runHeadlessCapture({CaptureBridge? bridge, FinanceS
         if (a != null) last = '${Money(a.minor, a.currency)}${r.parsed?.merchant != null ? ' · ${r.parsed!.merchant}' : ''}';
       case IngestOutcome.review || IngestOutcome.possibleDuplicate:
         review++;
+      case IngestOutcome.duplicate:
+        duplicate++;
       default:
         ignored++;
     }
   }
   final queued = await (bridge ?? CaptureBridge()).inboxCount();
   if (store == null) await st.db.close();
-  return {'posted': posted, 'review': review, 'ignored': ignored, 'queued': queued, 'last': last};
+  return {'posted': posted, 'review': review, 'ignored': ignored, 'duplicate': duplicate, 'queued': queued, 'last': last};
 }

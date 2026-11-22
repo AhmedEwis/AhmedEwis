@@ -21,6 +21,18 @@ All code-side scope is implemented. What remains needs devices, credentials or r
 
 **CI:** GitHub Actions on this repo works and is the iOS compile path (`mobile-ci` → `build-ios` on macos-15).
 
+**Round 3 (Codex ingestion review):**
+- Atomic, race-safe ingestion and schema v3.
+- Status-aware and account-safe deduplication.
+- Transfer linking only on evidence.
+- Shortcut retry is idempotent.
+- TestFlight workflow and the device acceptance checklist (`docs/device-acceptance.md`).
+
+**iOS install status:**
+- Compiled (CI, unsigned): yes.
+- Signed: no. Uploaded: no. Installable: no.
+- Blocked on an Apple Developer Program membership and an App Store Connect API key added as GitHub secrets (`docs/release-and-signing.md`).
+
 ## Rebuilding the local environment
 
 1. Install Flutter 3.50.1 to `/opt/flutter`.

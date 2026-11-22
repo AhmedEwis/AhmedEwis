@@ -46,17 +46,23 @@ These are checked against each other by `mobile/test/core/release_config_test.da
 
 Without `key.properties`, release builds are produced **unsigned**. The build never falls back to debug keys for release.
 
-## Signed iOS builds
+## Signed iOS builds and TestFlight
 
-1. In the Apple Developer portal, create:
-   - App ID `kw.fils.fils` with Sign in with Apple and App Groups (`group.kw.fils`).
-   - App ID `kw.fils.fils.ShareExtension` with App Groups.
-2. In Xcode, select your Team for both the Runner and ShareExtension targets (automatic signing), or provide profiles in CI.
-3. In CI, add an App Store Connect API key (`APP_STORE_CONNECT_KEY_ID`, `_ISSUER_ID`, `_PRIVATE_KEY`) and run:
-   `flutter build ipa --release --dart-define=FILS_ENV=production --dart-define=FILS_API_BASE_URL=… --export-options-plist=ios/ExportOptions.plist`
-4. Upload to TestFlight. Test on a device:
-   - the Shortcuts automation, the "Test Fils Capture" action, and the Share Extension from Messages;
-   - Wallet automation and notification permission.
+**Status:** no Apple Developer team, certificate, provisioning profile or App Store Connect key exists in this repository or its CI. The Xcode project has no `DEVELOPMENT_TEAM`. The iOS app is **compiled** in CI (unsigned), but it is **not signed, not uploaded and not installable** on an iPhone yet.
+
+The pipeline is ready: [`.github/workflows/ios-testflight.yml`](../../.github/workflows/ios-testflight.yml) archives with automatic signing through an App Store Connect API key, exports `ios/ExportOptions.plist` (`app-store-connect`), checks the Share Extension is embedded and signed, uploads to TestFlight with `altool`, and deletes the key from the runner. The test build uses `FILS_ENV=staging` with no API URL, so it's fully local, with no backend, AI, voice or subscriptions. On every push to the branch, its preflight job lists which prerequisites are missing without attempting a build.
+
+### Prerequisites (one time, done by the account holder; never pasted into chat)
+
+1. **Apple Developer Program membership** (paid, individual or organization) for the Apple ID that will own the app.
+2. In **App Store Connect → Apps → +**, create an app record with bundle ID `kw.fils.fils` (register the identifier first under Certificates, Identifiers & Profiles if it isn't offered). Automatic signing in CI registers the App Group `group.kw.fils`, Sign in with Apple and the `kw.fils.fils.ShareExtension` identifier, provided the key below has the **Admin** role. With **App Manager**, create those identifiers by hand first.
+3. In **App Store Connect → Users and Access → Integrations → App Store Connect API**, create a team key and download `AuthKey_<KEYID>.p8` (it can be downloaded only once).
+4. In **GitHub → this repository → Settings → Secrets and variables → Actions**, add `APPLE_TEAM_ID`, `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID` and `APP_STORE_CONNECT_PRIVATE_KEY` (the full `.p8` text).
+5. **Actions → ios-testflight → Run workflow.** After Apple's processing (usually 5–30 minutes), add yourself as an internal tester in TestFlight and install the build. Internal testing needs no App Review.
+
+Then run [device-acceptance.md](device-acceptance.md).
+
+**Alternative without CI:** on a Mac with Xcode 16+, open `ios/Runner.xcworkspace`, select your Team for the Runner and ShareExtension targets, connect the iPhone and Run. A free Apple ID can install a 7-day development build, but free provisioning doesn't support App Groups, so Shortcut-to-app capture won't work. A paid membership is needed for the real acceptance test.
 
 ## Test APK provided with this handoff
 

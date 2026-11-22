@@ -86,6 +86,7 @@ struct ImportBankTransactionIntent: AppIntent {
       if s.posted > 0, let line = s.lastLine { return .result(dialog: "Added to Fils: \(line)") }
       if s.review > 0 { return .result(dialog: "Saved to Fils. It needs your review before it counts.") }
       if s.ignored > 0 { return .result(dialog: "Not a transaction (for example an OTP). Nothing was added.") }
+      if s.duplicate > 0 { return .result(dialog: "Already in Fils. This exact message was imported before, so it was not counted again.") }
     }
     return .result(dialog: "Saved securely in Fils. It will be added to your balances shortly, or when you open Fils.")
   }

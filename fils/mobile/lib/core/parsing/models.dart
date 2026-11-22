@@ -60,6 +60,9 @@ class ParsedEvent {
   final String? processor; // payment processor, e.g. MyFatoorah or KNET
   final String? cardLast4;
   final String? accountLast4;
+  /// For transfers: the other account's last 4 digits when the message names it
+  /// ("to account XXXX9012"). Evidence for linking two owned legs as one transfer.
+  final String? counterAccountLast4;
   final String? bankId;
   final DateTime? occurredAt; // UTC, from message text
   final double confidence; // 0..1
@@ -81,6 +84,7 @@ class ParsedEvent {
     this.processor,
     this.cardLast4,
     this.accountLast4,
+    this.counterAccountLast4,
     this.bankId,
     this.occurredAt,
     required this.confidence,
@@ -110,6 +114,7 @@ class ParsedEvent {
         processor: processor,
         cardLast4: cardLast4,
         accountLast4: accountLast4,
+        counterAccountLast4: counterAccountLast4,
         bankId: bankId ?? this.bankId,
         occurredAt: occurredAt,
         confidence: confidence ?? this.confidence,

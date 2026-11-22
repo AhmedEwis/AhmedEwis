@@ -349,6 +349,8 @@ class KuwaitParser {
     final ids = _extractIdentifiers(t);
     if (ids.$1 != null) evidence['card_last4'] = ids.$1!;
     if (ids.$2 != null) evidence['account_last4'] = ids.$2!;
+    final counter = (kind == TxKind.transferIn || kind == TxKind.transferOut) ? ids.$3 : null;
+    if (counter != null) evidence['counter_account_last4'] = counter;
 
     // 6. Date
     final occurred = _extractDate(t, e.receivedAt, notes);
@@ -375,6 +377,7 @@ class KuwaitParser {
       processor: mm?.processor,
       cardLast4: ids.$1,
       accountLast4: ids.$2,
+      counterAccountLast4: counter,
       bankId: bankId,
       occurredAt: occurred,
       confidence: conf,
@@ -507,8 +510,10 @@ class KuwaitParser {
     return null;
   }
 
-  (String?, String?) _extractIdentifiers(String t) {
-    String? card, acct;
+  /// (card, own account, counter account). The counter account is a second, different
+  /// account number in the same message ("from your account XXXX5678 to account XXXX9012").
+  (String?, String?, String?) _extractIdentifiers(String t) {
+    String? card, acct, counter;
     final re = RegExp(
         r'(card|بطاقة|بطاقتك|بطاقه|a/c|acct|account|حساب|حسابك|حسابكم)[^\d\n]{0,40}?(?:[x*•#.]{2,}\s?|ending(?: with| in)?\s*|ends with\s*|no\.?\s*|number\s*|رقم\s*|المنتهية\s*ب\s*(?:ـ|رقم)?\s*|تنتهي\s*ب\s*)?(\d{4})(?!\d)');
     for (final m in re.allMatches(t)) {
@@ -520,8 +525,10 @@ class KuwaitParser {
       if (before == '/' || before == '-') continue;
       if (w.startsWith('card') || w.startsWith('بطاق')) {
         card ??= d;
-      } else {
-        acct ??= d;
+      } else if (acct == null) {
+        acct = d;
+      } else if (d != acct) {
+        counter ??= d;
       }
     }
     // A bare masked sequence such as "XXXX1234" with no label is assumed to be a card.
@@ -529,7 +536,7 @@ class KuwaitParser {
       final m = RegExp(r'[x*•#]{3,}\s?(\d{4})(?!\d)').firstMatch(t);
       if (m != null) card = m.group(1);
     }
-    return (card, acct);
+    return (card, acct, counter);
   }
 
   DateTime? _extractDate(String t, DateTime receivedAt, List<String> notes) {

@@ -33,6 +33,7 @@ Map<String, dynamic> ev(String id, String text, {String source = 'shortcut', Map
     {'id': id, 'source': source, 'text': text, 'receivedAt': '2026-11-22T09:00:00Z', 'platformId': id, if (fields != null) 'fields': fields};
 
 void main() {
+  _shortcutRetryTests();
   test('headless run posts, reviews and ignores; summary reports each stage', () async {
     final s = await newTestStore(now: DateTime.utc(2026, 11, 22, 9));
     final b = FakeBridge()
@@ -97,4 +98,69 @@ void main() {
     }
     expect((await s.allTransactions()).where((t) => !t.needsReview), isEmpty);
   });
+
+  test('an event whose ingestion fails is not acked or lost; the rest of the inbox still drains', () async {
+    final s = await newTestStore(now: DateTime.utc(2026, 11, 22, 9));
+    final b = FakeBridge()
+      ..inbox.addAll([
+        ev('a', 'Purchase of KWD 1.000 at STARBUCKS card ending 1234'),
+        ev('boom', 'Purchase of KWD 2.000 at TALABAT card ending 1234'),
+        ev('c', 'Purchase of KWD 3.000 at LULU HYPERMARKET card ending 1234'),
+      ]);
+    var failOnce = true;
+    var calls = 0;
+    final svc = CaptureService(b, _Thrower(s, () => ++calls == 2 && failOnce), s);
+    await svc.drain();
+    expect(b.inbox.map((m) => m['id']), ['boom'], reason: 'failed event stays queued');
+    expect((await s.allTransactions()).length, 2);
+    failOnce = false;
+    await CaptureService(b, IngestionService(s), s).drain();
+    expect(b.inbox, isEmpty);
+    expect((await s.allTransactions()).length, 3);
+  });
+}
+
+
+void _shortcutRetryTests() {
+  test('device scenario: the same SMS imported twice through Shortcuts (new run id each time) counts once', () async {
+    final s = await newTestStore(now: DateTime.utc(2026, 11, 22, 9));
+    const msg = '[SYNTHETIC] Purchase of KWD 5.250 at TALABAT card ending 1234 on 22/11/2026 12:00';
+    final b = FakeBridge()..inbox.addAll([ev('run-A', msg), ev('run-B', msg)]);
+    final sum = await runHeadlessCapture(bridge: b, store: s);
+    expect(sum['posted'], 1);
+    expect(sum['duplicate'], 1);
+    expect(sum['queued'], 0);
+    // Retry again later (app closed, phone locked → headless path again).
+    b.inbox.add(ev('run-C', msg));
+    final sum2 = await runHeadlessCapture(bridge: b, store: s);
+    expect(sum2['duplicate'], 1);
+    final txs = await s.allTransactions();
+    expect(txs.length, 1);
+    expect(txs.single.amountMinor, 5250);
+    final dupEvents = await (s.db.select(s.db.sourceEvents)..where((e) => e.status.equals('duplicate'))).get();
+    expect(dupEvents.length, 2, reason: 'retries are recorded, not silently dropped');
+    expect(dupEvents.every((e) => e.transactionId == txs.single.id), isTrue);
+  });
+
+  test('the same Shortcut text more than 24 h later is a new transaction', () async {
+    final s = await newTestStore(now: DateTime.utc(2026, 11, 22, 9));
+    const msg = 'Purchase of KWD 1.500 at CARIBOU COFFEE card ending 1234';
+    final ing = IngestionService(s);
+    await ing.ingest(RawEvent(text: msg, receivedAt: DateTime.utc(2026, 11, 20, 9), source: SourceKind.shortcut, sourceId: 'r1'));
+    final r = await ing.ingest(RawEvent(text: msg, receivedAt: DateTime.utc(2026, 11, 22, 9), source: SourceKind.shortcut, sourceId: 'r2'));
+    expect(r.outcome, IngestOutcome.posted);
+    expect((await s.allTransactions()).length, 2);
+  });
+}
+
+class _Thrower extends IngestionService {
+  final bool Function() shouldFail;
+  _Thrower(super.store, this.shouldFail);
+  @override
+  Future<IngestResult> ingest(RawEvent e) {
+    final fail = shouldFail();
+    return IngestionService(store, faultInjector: (stage) {
+      if (fail && stage == 'after_financial_write') throw StateError('killed mid-write');
+    }).ingest(e);
+  }
 }
