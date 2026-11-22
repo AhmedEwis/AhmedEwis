@@ -84,7 +84,10 @@ class InsightsScreen extends ConsumerWidget {
               Row(children: [
                 Text(s.comparePrevious, style: context.tt.bodySmall?.copyWith(color: p.inkSecondary)),
                 const Spacer(),
-                Text('${delta >= 0 ? '▲' : '▼'} ${fmt.money(delta.abs(), base)}', style: context.tt.labelMedium?.copyWith(color: delta > 0 ? p.negative : p.positive)),
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(delta >= 0 ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded, size: 14, color: delta > 0 ? p.negative : p.positive),
+                  Text(fmt.money(delta.abs(), base), style: context.tt.labelMedium?.copyWith(color: delta > 0 ? p.negative : p.positive)),
+                ]),
               ]),
             ]),
           ),

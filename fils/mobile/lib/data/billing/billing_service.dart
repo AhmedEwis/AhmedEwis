@@ -34,12 +34,15 @@ class Entitlements {
 /// unlock everything.
 class BillingService {
   final ApiClient api;
-  final InAppPurchase _iap;
+  final InAppPurchase? _iapOverride;
+  // Lazy: touching InAppPurchase.instance connects to the store, which must not happen in
+  // development/staging builds or before it is needed.
+  InAppPurchase get _iap => _iapOverride ?? InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _sub;
   final _ent = StreamController<Entitlements>.broadcast();
   Entitlements current = AppConfig.isProduction ? Entitlements.free : Entitlements.devUnlocked;
 
-  BillingService(this.api, {InAppPurchase? iap}) : _iap = iap ?? InAppPurchase.instance;
+  BillingService(this.api, {InAppPurchase? iap}) : _iapOverride = iap;
 
   Stream<Entitlements> get entitlements => _ent.stream;
 
@@ -54,7 +57,8 @@ class BillingService {
 
   Future<List<ProductDetails>> products() async {
     if (!await storeAvailable()) return const [];
-    final r = await _iap.queryProductDetails({AppConfig.proMonthlyProductId, AppConfig.proYearlyProductId});
+    final ids = Platform.isIOS ? {AppConfig.proMonthlyProductId, AppConfig.proYearlyProductId} : {AppConfig.googleSubscriptionId};
+    final r = await _iap.queryProductDetails(ids);
     return r.productDetails;
   }
 

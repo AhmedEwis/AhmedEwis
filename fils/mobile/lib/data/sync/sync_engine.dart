@@ -54,8 +54,10 @@ class ApiSyncTransport implements SyncTransport {
 }
 
 const _settingNs = '6f9a1c0e-3b7d-4c2a-9e51-0b6d2f8a4c13';
-/// Deterministic UUID for a synced setting key (server ids are UUIDs).
-String settingUuid(String key) => const Uuid().v5(_settingNs, key);
+
+/// Deterministic UUID for a synced setting key, scoped to the cloud user so ids are
+/// identical across that user's devices but never collide between users.
+String settingUuid(String key, {required String owner}) => const Uuid().v5(_settingNs, '$owner:$key');
 
 String _date(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 String? _dateN(DateTime? d) => d == null ? null : _date(d.toUtc());
@@ -218,7 +220,10 @@ class SyncEngine {
         if (v == null) return null;
         final ver = int.tryParse(await store.getSetting('sync_ver_$id') ?? '') ?? 0;
         final key = id == SettingKeys.cycleStartDay ? 'cycle_start_day' : id;
-        return _env(entity, settingUuid(key), ver, null, store.now, null, {'id': settingUuid(key), 'key': key, 'value': int.tryParse(v) ?? v});
+        final owner = await store.getSetting(SyncKeys.owner);
+        if (owner == null) return null; // settings sync only once bound to a cloud user
+        final sid = settingUuid(key, owner: owner);
+        return _env(entity, sid, ver, null, store.now, null, {'id': sid, 'key': key, 'value': int.tryParse(v) ?? v});
     }
     return null;
   }

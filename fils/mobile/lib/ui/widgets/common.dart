@@ -25,12 +25,11 @@ class FCard extends StatelessWidget {
         boxShadow: Theme.of(context).brightness == Brightness.light ? FilsShadow.card : null,
         border: Theme.of(context).brightness == Brightness.dark ? Border.all(color: p.border) : null,
       ),
-      child: onTap == null
-          ? body
-          : Material(
-              color: Colors.transparent,
-              child: InkWell(borderRadius: BorderRadius.circular(radius), onTap: onTap, child: body),
-            ),
+      // A transparency Material lets ListTiles/InkWells inside the card paint ripples.
+      child: Material(
+        type: MaterialType.transparency,
+        child: onTap == null ? body : InkWell(borderRadius: BorderRadius.circular(radius), onTap: onTap, child: body),
+      ),
     );
   }
 }

@@ -92,7 +92,8 @@ class _WealthScreenState extends ConsumerState<WealthScreen> {
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Row(children: [
-                  Pill('${change >= 0 ? '▲' : '▼'} ${fmt.money(change.abs(), base)}${start != 0 ? ' (${fmt.percent((change / start.abs()).abs())})' : ''}',
+                  Pill('${change >= 0 ? '+' : '-'}${fmt.money(change.abs(), base)}${start != 0 ? ' (${fmt.percent((change / start.abs()).abs())})' : ''}',
+                      icon: change >= 0 ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
                       bg: change >= 0 ? p.positiveBg : p.negativeBg, fg: change >= 0 ? p.positive : p.negative),
                   const SizedBox(width: 8),
                   Text(switch (range) { Range.m1 => s.ar ? 'هذا الشهر' : 'this month', Range.m3 => s.ar ? 'آخر ٣ أشهر' : 'last 3 months', Range.y1 => s.ar ? 'هذه السنة' : 'this year', Range.all => s.ar ? 'منذ البداية' : 'all time' },
@@ -119,7 +120,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen> {
                               getTooltipItems: (spots) => [
                                 for (final sp in spots)
                                   LineTooltipItem(
-                                    '${fmt.money(sp.y.round(), base)}\n${fmt.dayMonthYear(ReportingZone.kuwait.toWall(now.subtract(Duration(days: (days - sp.x).round()))))}',
+                                    '${fmt.money(sp.y.round(), base)}\n${fmt.dayMonthYear(ReportingZone.kuwait.toWall(now.subtract(Duration(days: (-sp.x).round()))))}',
                                     context.tt.labelMedium!.copyWith(color: p.ink),
                                   ),
                               ],
@@ -230,6 +231,16 @@ class _WealthScreenState extends ConsumerState<WealthScreen> {
     final manualAssets = assets.where((a) => !(a.linkedAccountId != null && tracked.contains(a.linkedAccountId))).toList();
     final step = days > 120 ? 7 : 1;
     final out = <FlSpot>[];
+    // Start the series when tracking began (earliest opening balance or valuation), so
+    // the period change isn't inflated by "nothing tracked yet" points.
+    final firstKnown = [
+      ...accts.map((a) => a.openingBalanceDate),
+      ...assets.map((a) => a.valuationDate),
+    ].fold<DateTime?>(null, (m, d) => m == null || d.isBefore(m) ? d : m);
+    if (firstKnown != null) {
+      final maxDays = now.difference(firstKnown).inDays;
+      if (maxDays < days) days = maxDays < 1 ? 1 : maxDays;
+    }
     final ids = accts.map((a) => a.id).toSet();
     final relevant = txs.where((t) => ids.contains(t.accountId) || (t.counterAccountId != null && ids.contains(t.counterAccountId))).toList();
     for (var d = days; d >= 0; d -= step) {
@@ -242,7 +253,7 @@ class _WealthScreenState extends ConsumerState<WealthScreen> {
       // A manual asset counts from its valuation date at its recorded value. No
       // historical prices are fabricated.
       final assetsKnown = manualAssets.where((x) => !x.valuationDate.isAfter(at)).fold<int>(0, (x, a) => x + (a.isLiability ? -a.valueMinor : a.valueMinor));
-      out.add(FlSpot((days - d).toDouble(), (total + assetsKnown).toDouble()));
+      out.add(FlSpot(-d.toDouble(), (total + assetsKnown).toDouble())); // x = -days ago
     }
     return out;
   }

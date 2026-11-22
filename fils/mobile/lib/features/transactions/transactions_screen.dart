@@ -148,9 +148,11 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                   }
                   items.add(Padding(
                     padding: const EdgeInsets.symmetric(horizontal: FilsSpace.gutter),
-                    child: Container(
-                      decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(FilsRadius.md)),
-                      margin: const EdgeInsets.only(bottom: 6),
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Material(
+                      color: p.surface,
+                      borderRadius: BorderRadius.circular(FilsRadius.md),
                       clipBehavior: Clip.antiAlias,
                       child: TxTile(
                         t: t,
@@ -161,6 +163,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                         onTap: () => selected.isNotEmpty ? setState(() => selected.contains(t.id) ? selected.remove(t.id) : selected.add(t.id)) : context.push('/transactions/${t.id}'),
                         onLongPress: () => setState(() => selected.add(t.id)),
                       ),
+                    ),
                     ),
                   ));
                 }

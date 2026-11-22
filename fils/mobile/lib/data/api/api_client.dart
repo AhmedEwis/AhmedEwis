@@ -238,6 +238,21 @@ class ApiClient {
   Future<Map<String, dynamic>> voiceConfig() async => await request('GET', '/v1/voice/config') as Map<String, dynamic>;
   Future<Map<String, dynamic>> submitSample(Map<String, dynamic> body) async => await request('POST', '/v1/samples', body: body, idempotencyKey: const Uuid().v4()) as Map<String, dynamic>;
 
+  /// Upload a statement (PDF/CSV/image ≤ 10 MB) for server-side extraction. Returns a Job;
+  /// poll [job] until `status` is succeeded/failed. The server deletes the file after
+  /// extraction.
+  Future<Map<String, dynamic>> uploadDocument(List<int> bytes, String filename) async {
+    if (!configured) throw ApiException(0, 'cloud_not_configured', 'Backend URL not configured');
+    await _ensureFresh();
+    final req = http.MultipartRequest('POST', _u('/v1/ingest/document'))
+      ..headers['authorization'] = 'Bearer ${await tokens.access()}'
+      ..headers['idempotency-key'] = const Uuid().v4()
+      ..files.add(http.MultipartFile.fromBytes('file', bytes, filename: filename));
+    final res = await http.Response.fromStream(await _http.send(req).timeout(const Duration(seconds: 60)));
+    if (res.statusCode >= 400) throw _err(res);
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
   // ---- households
   Future<List<dynamic>> households() async => await request('GET', '/v1/households') as List<dynamic>;
   Future<Map<String, dynamic>> createHousehold(String name) async => await request('POST', '/v1/households', body: {'name': name}, idempotencyKey: const Uuid().v4()) as Map<String, dynamic>;

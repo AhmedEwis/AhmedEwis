@@ -104,8 +104,11 @@ class HomeScreen extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        Text('⌙ ${s.todayAmount(fmt.money(todaySpent, base))}',
-                            style: context.tt.titleSmall?.copyWith(color: Colors.white.withValues(alpha: 0.9))),
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(context.isRtl ? Icons.subdirectory_arrow_left : Icons.subdirectory_arrow_right, size: 16, color: Colors.white.withValues(alpha: 0.9)),
+                          const SizedBox(width: 2),
+                          Text(s.todayAmount(fmt.money(todaySpent, base)), style: context.tt.titleSmall?.copyWith(color: Colors.white.withValues(alpha: 0.9))),
+                        ]),
                         if (otherCur.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),

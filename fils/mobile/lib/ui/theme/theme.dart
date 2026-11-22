@@ -98,9 +98,10 @@ ThemeData buildTheme(Brightness b) {
         labelSmall: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, letterSpacing: 0.6),
       )
       .apply(bodyColor: p.ink, displayColor: p.ink, fontFamily: kFontFamily);
+  final textWithEmoji = _withFallback(text);
   return base.copyWith(
     scaffoldBackgroundColor: p.canvas,
-    textTheme: text,
+    textTheme: textWithEmoji,
     extensions: [p],
     appBarTheme: AppBarTheme(
       backgroundColor: p.canvas,
@@ -164,5 +165,28 @@ ThemeData buildTheme(Brightness b) {
     ),
     snackBarTheme: SnackBarThemeData(behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(FilsRadius.md))),
     switchTheme: SwitchThemeData(thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? Colors.white : null)),
+  );
+}
+
+const _emojiFallback = ['Apple Color Emoji', 'Noto Color Emoji', 'Segoe UI Emoji'];
+
+TextTheme _withFallback(TextTheme t) {
+  TextStyle? f(TextStyle? s) => s?.copyWith(fontFamilyFallback: _emojiFallback);
+  return TextTheme(
+    displayLarge: f(t.displayLarge),
+    displayMedium: f(t.displayMedium),
+    displaySmall: f(t.displaySmall),
+    headlineLarge: f(t.headlineLarge),
+    headlineMedium: f(t.headlineMedium),
+    headlineSmall: f(t.headlineSmall),
+    titleLarge: f(t.titleLarge),
+    titleMedium: f(t.titleMedium),
+    titleSmall: f(t.titleSmall),
+    bodyLarge: f(t.bodyLarge),
+    bodyMedium: f(t.bodyMedium),
+    bodySmall: f(t.bodySmall),
+    labelLarge: f(t.labelLarge),
+    labelMedium: f(t.labelMedium),
+    labelSmall: f(t.labelSmall),
   );
 }

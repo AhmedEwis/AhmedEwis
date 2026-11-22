@@ -17,8 +17,11 @@ class AppConfig {
   static const googleIosClientId = String.fromEnvironment('FILS_GOOGLE_IOS_CLIENT_ID', defaultValue: '');
 
   /// In-app purchase product ids (configured in App Store Connect / Play Console).
-  static const proMonthlyProductId = String.fromEnvironment('FILS_IAP_MONTHLY', defaultValue: 'fils_pro_monthly');
-  static const proYearlyProductId = String.fromEnvironment('FILS_IAP_YEARLY', defaultValue: 'fils_pro_yearly');
+  /// Must match the backend's FILS_APPLE_PRODUCT_IDS / FILS_GOOGLE_PRODUCT_IDS.
+  static const proMonthlyProductId = String.fromEnvironment('FILS_IAP_MONTHLY', defaultValue: 'kw.fils.premium.monthly');
+  static const proYearlyProductId = String.fromEnvironment('FILS_IAP_YEARLY', defaultValue: 'kw.fils.premium.yearly');
+  /// Google Play: one subscription product with monthly/yearly base plans.
+  static const googleSubscriptionId = String.fromEnvironment('FILS_IAP_GOOGLE', defaultValue: 'kw.fils.premium');
 
   /// Android build flavor: `play` (no SMS permission) or `sms` (SMS permission build for
   /// distribution only after Google Play's SMS permission declaration is approved).

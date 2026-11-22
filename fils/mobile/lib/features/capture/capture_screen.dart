@@ -96,7 +96,16 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> with WidgetsBindi
             icon: Icons.table_chart_outlined,
             title: s.importFileTitle,
             body: s.ar ? 'CSV يتم على جهازك. ملفات PDF والصور تتطلب تفعيل الذكاء السحابي.' : 'CSV is processed on your device. PDF and images need cloud processing (opt-in).',
-            child: FilledButton.tonalIcon(onPressed: () => _importCsv(context), icon: const Icon(Icons.upload_file), label: const Text('CSV')),
+            child: Wrap(spacing: 8, runSpacing: 8, children: [
+              FilledButton.tonalIcon(onPressed: () => _importCsv(context), icon: const Icon(Icons.upload_file), label: const Text('CSV')),
+              OutlinedButton.icon(
+                onPressed: ref.watch(apiProvider).configured && ref.watch(sessionProvider).value != null && ref.watch(settingsProvider).aiCloud
+                    ? () => _importDocument(context)
+                    : null,
+                icon: const Icon(Icons.picture_as_pdf_outlined),
+                label: Text(s.ar ? 'PDF / صورة' : 'PDF / image'),
+              ),
+            ]),
           ),
           const SizedBox(height: 12),
           _CoverageCard(),
@@ -373,6 +382,55 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen> with WidgetsBindi
     final sum = await importCsvRows(ref.read(storeProvider), acct!, parsed.rows);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.ar ? 'تم استيراد ${sum.imported}، مكرر ${sum.duplicates}' : 'Imported ${sum.imported} · skipped ${sum.duplicates} duplicates')));
+    }
+  }
+}
+
+extension on _CaptureScreenState {
+  Future<void> _importDocument(BuildContext context) async {
+    final s = S.of(context);
+    final res = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg', 'csv']);
+    final f = res.firstOrNull;
+    if (f == null) return;
+    if ((await f.length() ?? 0) > 10 * 1024 * 1024) return;
+    final api = ref.read(apiProvider);
+    try {
+      var job = await api.uploadDocument(await f.readAsBytes(), f.name);
+      for (var i = 0; i < 30 && (job['status'] == 'queued' || job['status'] == 'running'); i++) {
+        await Future<void>.delayed(const Duration(seconds: 2));
+        job = await api.job(job['id'] as String);
+      }
+      if (job['status'] != 'succeeded') throw Exception(job['error'] ?? 'failed');
+      final rows = <CsvCandidate>[];
+      var line = 0;
+      for (final r in ((job['result'] as Map?)?['rows'] as List? ?? job['result'] as List? ?? const []).cast<Map>()) {
+        line++;
+        final d = DateTime.tryParse('${r['occurred_on']}');
+        final amt = (r['amount_minor'] as num?)?.toInt();
+        if (d == null || amt == null || amt == 0) continue;
+        rows.add(CsvCandidate(ReportingZone.kuwait.fromWall(d.year, d.month, d.day, 12), '${r['description'] ?? ''}', amt.abs(), r['direction'] == 'credit', '${r['currency'] ?? 'KWD'}', line));
+      }
+      if (!context.mounted) return;
+      final accounts = ref.read(accountsProvider).value ?? const <AccountRow>[];
+      final acct = accounts.where((a) => a.isDefault).firstOrNull?.id ?? accounts.firstOrNull?.id;
+      if (acct == null || rows.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.noTransactions)));
+        return;
+      }
+      // Preview + confirm, then the same duplicate-safe import as CSV.
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('${s.importFileTitle} · ${rows.length}'),
+          content: SizedBox(width: 320, child: ListView(shrinkWrap: true, children: [for (final r in rows.take(10)) ListTile(dense: true, title: Text(r.description, maxLines: 1), trailing: Text(ref.read(settingsProvider).fmt.money(r.credit ? r.amountMinor : -r.amountMinor, r.currency)))])),
+          actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.cancel)), FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(s.import))],
+        ),
+      );
+      if (ok != true) return;
+      final sum = await importCsvRows(ref.read(storeProvider), acct, rows);
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${sum.imported} · ${sum.duplicates}')));
+    } catch (e) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.genericError)));
     }
   }
 }
