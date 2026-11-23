@@ -36,6 +36,15 @@ Only checks that were actually run are listed.
 
 **Full run:** `FILS_E2E_API=http://127.0.0.1:8099 flutter test test/core test/perf test/e2e` → **159 passed, 0 failed**. `flutter analyze` → **0 errors, 0 warnings**.
 
+**CI at `21f5638`:**
+- `mobile-ci` run `45107105491`: success. Android tests passed. The iOS device build (no codesign) and the simulator build both succeeded.
+- `security` run `45107105612`: success.
+- `ios-testflight` run `45107105550`:
+  - `archive-unsigned`: success. The log reads *"Archive OK: app 0.2.0 (3000), extension embedded, versions match. UNSIGNED: not installable."*
+  - preflight: *"Missing secrets: APPLE_TEAM_ID APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_PRIVATE_KEY. No signed build attempted."*
+
+The dry-run had first **failed** at `c929c31` (run `45105809463`): the Share Extension's `Info.plist` had no `CFBundleVersion`, which App Store Connect would reject. This was fixed in `21f5638` by adding `ShareExtension.xcconfig`, which includes only `Flutter/Generated.xcconfig`.
+
 **Screenshots:** `FILS_SCREENSHOTS=1 … flutter test test/screenshots --update-goldens` → 4 variants passed. The Review screen now shows the held card (*Same transaction / Separate purchase / Dismiss*) in EN, AR (RTL), light and dark.
 
 ## 0. Codex ingestion review: reproduce, fix, regression-test

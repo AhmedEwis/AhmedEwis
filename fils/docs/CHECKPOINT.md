@@ -30,6 +30,7 @@ All code-side scope is implemented. What remains needs devices, credentials or r
 
 **iOS install status:**
 - Compiled (CI, unsigned): yes.
+- Unsigned `xcodebuild archive` passes, with the extension embedded and versions matching.
 - Signed: no. Uploaded: no. Installable: no.
 - Blocked on an Apple Developer Program membership and an App Store Connect API key added as GitHub secrets (`docs/release-and-signing.md`).
 
