@@ -34,6 +34,11 @@ All code-side scope is implemented. What remains needs devices, credentials or r
 - Signed: no. Uploaded: no. Installable: no.
 - Blocked on an Apple Developer Program membership and an App Store Connect API key added as GitHub secrets (`docs/release-and-signing.md`).
 
+**Feature freeze (device-test build 0.3.0):**
+- Only fixes go in until local-core acceptance passes on real devices.
+- The build, install and acceptance split are in `docs/device-test-build.md`: local core in `docs/device-acceptance.md`, cloud features in `docs/cloud-acceptance.md` (blocked).
+- Schema is v4.
+
 ## Rebuilding the local environment
 
 1. Install Flutter 3.50.1 to `/opt/flutter`.

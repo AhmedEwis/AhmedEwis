@@ -50,6 +50,8 @@ Android flavors:
 - **Capture runtime:** [docs/capture-runtime.md](docs/capture-runtime.md)
 - **Release and signing:** [docs/release-and-signing.md](docs/release-and-signing.md)
 - **Bank coverage:** [docs/bank-samples.md](docs/bank-samples.md)
+- **Device-test build (feature freeze):** [docs/device-test-build.md](docs/device-test-build.md)
+- **Local-core acceptance:** [docs/device-acceptance.md](docs/device-acceptance.md). **Cloud-feature acceptance:** [docs/cloud-acceptance.md](docs/cloud-acceptance.md) (blocked)
 - **Resume point:** [docs/CHECKPOINT.md](docs/CHECKPOINT.md)
 
 **Verified:**

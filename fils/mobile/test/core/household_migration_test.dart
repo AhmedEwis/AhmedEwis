@@ -75,7 +75,7 @@ void main() {
     expect((await st2.account(acct.id))!.openingBalanceMinor, 1234);
     expect(await db.select(db.sharedRecords).get(), isEmpty); // table exists again
     final v = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(v.data.values.first, 3);
+    expect(v.data.values.first, db.schemaVersion);
     await db.close();
     await dir.delete(recursive: true);
   });
@@ -114,7 +114,7 @@ void main() {
         db.customStatement("INSERT INTO source_events (id, source, platform_id, text_hash, received_at, status, created_at) VALUES ('e3', 'shortcut', 'run-1', 'h', 0, 'x', 0)"),
         throwsA(anything));
     expect((await FinanceStore(db).transaction(tx.id))!.amountMinor, 5250);
-    expect((await db.customSelect('PRAGMA user_version').getSingle()).data.values.first, 3);
+    expect((await db.customSelect('PRAGMA user_version').getSingle()).data.values.first, db.schemaVersion);
     await db.close();
     await dir.delete(recursive: true);
   });

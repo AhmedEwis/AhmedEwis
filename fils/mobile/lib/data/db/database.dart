@@ -103,9 +103,9 @@ class SourceEvents extends Table {
   DateTimeColumn get createdAt => dateTime()();
   /// v3: the other account named by a transfer message (last 4), kept as linking evidence.
   TextColumn get counterLast4 => text().nullable()();
-  /// v3: for a held possible duplicate, the candidate transaction ids (comma-separated).
+  /// v4: for a held possible duplicate, the candidate transaction ids (comma-separated).
   TextColumn get matchCandidates => text().nullable()();
-  /// v3: explicit group of held captures that are the same message delivered through
+  /// v4: explicit group of held captures that are the same message delivered through
   /// several channels on the same verified account (root event id). Resolution only
   /// ever touches members of this group.
   TextColumn get heldGroup => text().nullable()();
@@ -313,7 +313,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -331,20 +331,19 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) {
             await m.createTable(sharedRecords);
           }
-          // v2 → v3: replay safety. Guarantee the (source, platform_id) uniqueness on every
-          // upgraded database. Pre-existing duplicate rows are kept for audit but renamed
-          // (never deleted, so nothing that references them breaks), then the unique index
-          // is created. Rows without a platform id are allowed (see ingestion.dart).
+          // Column existence is checked before every ADD COLUMN, so each step is safe on
+          // any database that already has some of its columns.
+          Future<Set<String>> sourceEventColumns() async =>
+              (await customSelect("SELECT name FROM pragma_table_info('source_events')").get()).map((r) => r.data['name'] as String).toSet();
+
+          // v2 → v3 (shipped in review builds from 15700e1): replay safety. Guarantee the
+          // (source, platform_id) uniqueness on every upgraded database. Pre-existing
+          // duplicate rows are kept for audit but renamed (never deleted, so nothing that
+          // references them breaks), then the unique index is created. Rows without a
+          // platform id are allowed (see ingestion.dart). Also the transfer evidence column.
           if (from < 3) {
-            final cols = await customSelect("SELECT name FROM pragma_table_info('source_events')").get();
-            if (!cols.any((r) => r.data['name'] == 'counter_last4')) {
+            if (!(await sourceEventColumns()).contains('counter_last4')) {
               await m.addColumn(sourceEvents, sourceEvents.counterLast4);
-            }
-            if (!cols.any((r) => r.data['name'] == 'match_candidates')) {
-              await m.addColumn(sourceEvents, sourceEvents.matchCandidates);
-            }
-            if (!cols.any((r) => r.data['name'] == 'held_group')) {
-              await m.addColumn(sourceEvents, sourceEvents.heldGroup);
             }
             await customStatement('''
               UPDATE source_events SET platform_id = platform_id || '#dup-' || id
@@ -352,6 +351,15 @@ class AppDatabase extends _$AppDatabase {
                 SELECT MIN(rowid) FROM source_events WHERE platform_id IS NOT NULL GROUP BY source, platform_id)''');
             await customStatement(
                 'CREATE UNIQUE INDEX IF NOT EXISTS idx_src_platform ON source_events(source, platform_id) WHERE platform_id IS NOT NULL');
+          }
+          // v3 → v4: held possible duplicates. Two different v3 schemas shipped: 15700e1
+          // (no match_candidates, no held_group) and c929c31–70d3b54 (match_candidates but
+          // no held_group). Both are brought to the same v4 schema. Additive only: every
+          // existing row is kept as is (new columns start NULL).
+          if (from < 4) {
+            final cols = await sourceEventColumns();
+            if (!cols.contains('match_candidates')) await m.addColumn(sourceEvents, sourceEvents.matchCandidates);
+            if (!cols.contains('held_group')) await m.addColumn(sourceEvents, sourceEvents.heldGroup);
           }
         },
         beforeOpen: (details) async {
