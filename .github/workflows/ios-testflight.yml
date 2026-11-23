@@ -89,8 +89,10 @@ jobs:
           [ "$(pb CFBundleVersion "$A/Info.plist")" = "$(pb CFBundleVersion "$X/Info.plist")" ]
           [ "$(pb CFBundleShortVersionString "$A/Info.plist")" = "$(pb CFBundleShortVersionString "$X/Info.plist")" ]
           [ "$(pb CFBundleVersion "$A/Info.plist")" = 3000 ]
+          test -f "$A/PrivacyInfo.xcprivacy"
+          test -f "$X/PrivacyInfo.xcprivacy"
           plutil -lint ios/ExportOptions.plist
-          echo "Archive OK: app $(pb CFBundleShortVersionString "$A/Info.plist") ($(pb CFBundleVersion "$A/Info.plist")), extension embedded, versions match. UNSIGNED: not installable." | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Archive OK: app $(pb CFBundleShortVersionString "$A/Info.plist") ($(pb CFBundleVersion "$A/Info.plist")), extension embedded, versions match, privacy manifests bundled. UNSIGNED: not installable." | tee -a "$GITHUB_STEP_SUMMARY"
 
   archive:
     needs: preflight

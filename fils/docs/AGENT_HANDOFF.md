@@ -31,6 +31,13 @@ All four findings were reproduced with failing tests on the old code, then fixed
 | Found while preparing the device test | A Shortcut retry double-posted, because each run has a new ID. Now an identical Shortcut text within 24 hours is a recorded duplicate, and the banner says "Already in Fils" |
 | Device path | `.github/workflows/ios-testflight.yml` (secret preflight, then archive, export, TestFlight upload), `ios/ExportOptions.plist`, `docs/device-acceptance.md` |
 
+## Round 5: response to your third review (settlement ambiguity, Dismiss)
+
+| Finding | Fix | Tests |
+|---|---|---|
+| 1. Settlement picks the first authorization | All qualifying authorizations are collected. One is settled directly; more than one is held, and **Same transaction** settles exactly the chosen offered authorization, atomically. Cross-source re-deliveries are never applied as a second settlement: they join a held original, or merge into the applied one | `settlement_dismiss_test.dart` |
+| 2. Unconditional Dismiss | `dismissHeld`: a conditional `status = held` update in a transaction; held re-deliveries follow it | both orders; 24 races on two connections |
+
 ## Round 4: response to your second ingestion review
 
 | Finding | Fix |

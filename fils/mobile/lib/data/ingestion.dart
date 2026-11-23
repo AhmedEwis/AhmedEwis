@@ -229,30 +229,51 @@ class IngestionService {
     final occurredAt = parsed.occurredAt ?? e.receivedAt.toUtc();
     final amount = parsed.amount!;
 
+    // Re-deliveries of this exact message through another channel (SMS + notification),
+    // on compatible accounts. If one is held, this one joins it: it's held too and is
+    // resolved together with it. If one was already applied, this is a re-delivery:
+    // it must not be applied again (no second settlement); it goes to (c), where it
+    // matches the record the first delivery produced.
+    final twins = <SourceEventRow>[];
+    for (final tw in await (db.select(db.sourceEvents)
+          ..where((s) =>
+              s.id.isNotValue(eventId) &
+              s.textHash.equals(hash) &
+              s.source.isNotValue(e.source.name) &
+              s.status.isNotIn(const ['processing', 'ignored']) &
+              s.receivedAt.isBiggerOrEqualValue(e.receivedAt.toUtc().subtract(const Duration(minutes: 3))) &
+              s.receivedAt.isSmallerOrEqualValue(e.receivedAt.toUtc().add(const Duration(minutes: 3)))))
+        .get()) {
+      if (tw.bankId != null && parsed.bankId != null && tw.bankId != parsed.bankId) continue;
+      if (tw.transactionId != null) {
+        final t = await store.transaction(tw.transactionId!);
+        if (t != null && !_accountsCompatible(accounts[t.accountId], account, parsed)) continue;
+      }
+      twins.add(tw);
+    }
+    final heldTwin = twins.where((t) => t.status == kHeld).firstOrNull;
+    if (heldTwin != null) {
+      return _hold(e, eventId, text, parsed, (heldTwin.matchCandidates ?? '').split(',').where((x) => x.isNotEmpty).toList(),
+          'Same message as a capture already waiting for your decision (via ${heldTwin.source}); resolved together with it.');
+    }
+    final isRedelivery = twins.any((t) => t.transactionId != null);
+
     // (b) A settlement of an earlier pending authorization updates the pending row in
     // place (I6). Runs before cross-source matching so a settlement through another
-    // channel still settles the pending row.
-    if (account != null && parsed.status == TxStatus.posted && parsed.kind == TxKind.purchase) {
+    // channel still settles the pending row. Exactly one qualifying authorization is
+    // settled. If several qualify (e.g. pending 10.000 and 12.000, settlement 11.000),
+    // the settlement is held and the user picks which one.
+    if (account != null && !isRedelivery && parsed.status == TxStatus.posted && parsed.kind == TxKind.purchase) {
       final pend = await (db.select(db.transactions)
-            ..where((t) =>
-                t.deletedAt.isNull() &
-                t.status.equals(TxStatuses.pending) &
-                t.accountId.equals(account.id) &
-                t.occurredAt.isBiggerOrEqualValue(occurredAt.subtract(const Duration(days: 10))) &
-                t.occurredAt.isSmallerOrEqualValue(occurredAt.add(const Duration(minutes: 5)))))
+            ..where((t) => t.deletedAt.isNull() & t.status.equals(TxStatuses.pending) & t.accountId.equals(account.id)))
           .get();
-      for (final p in pend) {
-        final sameMerchant = p.merchant != null && p.merchant == parsed.merchant;
-        final within = (p.amountMinor - amount.minor).abs() <= (p.amountMinor * 0.2).round();
-        if (sameMerchant && within && p.currency == amount.currency) {
-          await store.updateTransaction(
-            p.id,
-            TransactionsCompanion(status: const Value(TxStatuses.posted), amountMinor: Value(amount.minor), occurredAt: Value(occurredAt)),
-            action: 'settle',
-          );
-          await _complete(e, eventId, text, parsed, 'merged', txId: p.id, notes: 'settled pending authorization');
-          return IngestResult(IngestOutcome.settledPending, eventId, transactionId: p.id, parsed: parsed, message: 'settled');
-        }
+      final qualifying = pend.where((p) => _isSettlementOf(p, parsed, account, occurredAt)).toList();
+      if (qualifying.length == 1) {
+        return _settle(qualifying.single, e, eventId, text, parsed, occurredAt);
+      }
+      if (qualifying.length > 1) {
+        return _hold(e, eventId, text, parsed, [for (final q in qualifying) q.id],
+            'Could settle any of ${qualifying.length} pending authorizations. Not applied until you pick which one (or mark it a separate purchase).');
       }
     }
 
@@ -303,6 +324,47 @@ class IngestionService {
     // (d) New transaction.
     return _postNew(e, eventId, text, parsed, account, aliases);
   }
+
+  /// Whether posted purchase [parsed] can be the settlement of pending authorization [p]:
+  /// same account, same merchant, same currency, within ±20 % (tips, FX), and the
+  /// authorization is at most 10 days older than the settlement.
+  bool _isSettlementOf(TxRow p, ParsedEvent parsed, AccountRow? account, DateTime occurredAt) {
+    final amount = parsed.amount;
+    if (amount == null || account == null) return false;
+    if (p.deletedAt != null || p.status != TxStatuses.pending || p.accountId != account.id) return false;
+    if (p.merchant == null || p.merchant != parsed.merchant || p.currency != amount.currency) return false;
+    if ((p.amountMinor - amount.minor).abs() > (p.amountMinor * 0.2).round()) return false;
+    return !p.occurredAt.isBefore(occurredAt.subtract(const Duration(days: 10))) && !p.occurredAt.isAfter(occurredAt.add(const Duration(minutes: 5)));
+  }
+
+  Future<IngestResult> _settle(TxRow p, RawEvent e, String eventId, String text, ParsedEvent parsed, DateTime occurredAt, {String? note}) async {
+    await store.updateTransaction(
+      p.id,
+      TransactionsCompanion(status: const Value(TxStatuses.posted), amountMinor: Value(parsed.amount!.minor), occurredAt: Value(occurredAt)),
+      action: 'settle',
+    );
+    await _complete(e, eventId, text, parsed, 'merged', txId: p.id, notes: note ?? 'settled pending authorization');
+    return IngestResult(IngestOutcome.settledPending, eventId, transactionId: p.id, parsed: parsed, message: 'settled');
+  }
+
+  /// Held re-deliveries of the same message through another channel follow the
+  /// resolution of [ev] (same transaction, or dismissal), in the same transaction.
+  Future<void> _resolveHeldTwins(SourceEventRow ev, {String? txId, required String status}) =>
+      (db.update(db.sourceEvents)
+            ..where((s) =>
+                s.id.isNotValue(ev.id) &
+                s.status.equals(kHeld) &
+                s.textHash.equals(ev.textHash) &
+                s.source.isNotValue(ev.source) &
+                s.receivedAt.isBiggerOrEqualValue(ev.receivedAt.subtract(const Duration(minutes: 3))) &
+                s.receivedAt.isSmallerOrEqualValue(ev.receivedAt.add(const Duration(minutes: 3)))))
+          .write(SourceEventsCompanion(
+            status: Value(status),
+            transactionId: Value(txId),
+            rawText: const Value(null),
+            matchCandidates: const Value(null),
+            notes: Value('Resolved together with the same message via ${ev.source}.'),
+          ));
 
   /// One eligibility rule set for every deduplication path.
   Future<bool> _eligible(TxRow c, RawEvent e, String eventId, ParsedEvent p, AccountRow? account, Map<String, AccountRow> accounts,
@@ -461,17 +523,28 @@ class IngestionService {
   // ---- Resolution of held captures (review inbox). Both are atomic and idempotent:
   // a retry, a double tap or a restart mid-way can't create a second financial effect.
 
-  /// The user confirms the held capture is the same as existing transaction [txId].
+  /// The user confirms the held capture is the same as existing transaction [txId]. For
+  /// a held settlement, this settles exactly the chosen authorization.
   Future<IngestResult> confirmSameTransaction(String eventId, String txId) => _withBusyRetry(() => db.transaction(() async {
         final ev = await (db.select(db.sourceEvents)..where((s) => s.id.equals(eventId))).getSingleOrNull();
         if (ev == null) throw StateError('unknown capture');
         if (ev.status != kHeld) return _alreadyResolved(ev);
         final c = await store.transaction(txId);
         if (c == null || !isEffective(c)) throw StateError('that transaction no longer exists');
+        final candidates = (ev.matchCandidates ?? '').split(',');
+        if (!candidates.contains(txId)) throw StateError('not one of the suggested matches');
         final (e, parsed) = await _rehydrate(ev);
-        final accounts = {for (final a in await store.accounts()) a.id: a};
-        return _mergeInto(c, e, ev.id, e.text, parsed, await _matchAccount(parsed), accounts,
-            note: 'confirmed by you as the same transaction');
+        final account = await _matchAccount(parsed);
+        final occurredAt = parsed.occurredAt ?? e.receivedAt.toUtc();
+        final IngestResult r;
+        if (c.status == TxStatuses.pending && _isSettlementOf(c, parsed, account, occurredAt)) {
+          r = await _settle(c, e, ev.id, e.text, parsed, occurredAt, note: 'settlement of the authorization you chose');
+        } else {
+          final accounts = {for (final a in await store.accounts()) a.id: a};
+          r = await _mergeInto(c, e, ev.id, e.text, parsed, account, accounts, note: 'confirmed by you as the same transaction');
+        }
+        await _resolveHeldTwins(ev, txId: c.id, status: 'merged');
+        return r;
       }));
 
   /// The user confirms the held capture is a genuinely separate purchase: it's posted
@@ -482,8 +555,23 @@ class IngestionService {
         if (ev.status != kHeld) return _alreadyResolved(ev);
         final (e, parsed) = await _rehydrate(ev);
         if (parsed.amount == null) throw StateError('capture can no longer be read');
-        return _postNew(e, ev.id, e.text, parsed, await _matchAccount(parsed), await store.merchantAliasMap(),
+        final r = await _postNew(e, ev.id, e.text, parsed, await _matchAccount(parsed), await store.merchantAliasMap(),
             note: 'confirmed by you as a separate purchase');
+        await _resolveHeldTwins(ev, txId: r.transactionId, status: 'merged');
+        return r;
+      }));
+
+  /// The user dismisses a held capture ("not a transaction"). It applies only if the
+  /// capture is still held: the conditional update and the twin update commit together,
+  /// so a late or competing Dismiss can't overwrite a completed resolution, and a
+  /// completed Dismiss makes later Same/Separate taps no-ops. Returns whether it applied.
+  Future<bool> dismissHeld(String eventId) => _withBusyRetry(() => db.transaction(() async {
+        final n = await (db.update(db.sourceEvents)..where((s) => s.id.equals(eventId) & s.status.equals(kHeld))).write(
+            const SourceEventsCompanion(status: Value('ignored'), rawText: Value(null), matchCandidates: Value(null), notes: Value('Dismissed by you.')));
+        if (n == 0) return false;
+        final ev = (await (db.select(db.sourceEvents)..where((s) => s.id.equals(eventId))).getSingle());
+        await _resolveHeldTwins(ev, status: 'ignored');
+        return true;
       }));
 
   IngestResult _alreadyResolved(SourceEventRow ev) => IngestResult(
@@ -491,6 +579,7 @@ class IngestionService {
           'posted' => IngestOutcome.posted,
           'merged' => IngestOutcome.merged,
           'review' => IngestOutcome.review,
+          'ignored' => IngestOutcome.ignored,
           _ => IngestOutcome.duplicate,
         },
         ev.id,

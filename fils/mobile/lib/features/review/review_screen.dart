@@ -245,8 +245,12 @@ class _HeldCard extends ConsumerWidget {
                   child: Text(s.ar ? 'عملية منفصلة' : 'Separate purchase'),
                 ),
                 TextButton(
-                  onPressed: () => (store.db.update(store.db.sourceEvents)..where((x) => x.id.equals(e.id)))
-                      .write(const SourceEventsCompanion(status: Value('ignored'), rawText: Value(null), matchCandidates: Value(null))),
+                  onPressed: () => run(() async {
+                    // Applies only while still held; a resolution that completed first wins.
+                    if (!await ing.dismissHeld(e.id) && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.ar ? 'تم البت فيها مسبقاً' : 'Already resolved')));
+                    }
+                  }),
                   child: Text(s.dismiss),
                 ),
               ]),

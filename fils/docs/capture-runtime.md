@@ -34,6 +34,7 @@
   - a cross-source match is ambiguous (more than one eligible transaction).
 
   A held capture is a source event with status `held` and **no transaction**: no balance or spending effect and nothing to sync. Its input is kept (encrypted) and the candidate IDs are stored. The Review inbox offers **Same transaction** (choose which) or **Separate purchase**. Both resolutions are atomic and idempotent (`confirmSameTransaction`, `confirmSeparate`). A purchase that only needs a category check still counts as usual.
+- **Pending settlement:** exactly one qualifying authorization (same account and merchant, ±20 %, within 10 days) is settled. If several qualify, the settlement is held, and the user picks which authorization it settles. A re-delivery of the same message through another channel is never applied twice: it joins a held original, or merges into the record the original produced. **Dismiss** applies only while the capture is still held.
 - **One rule set for every dedupe path** (`_eligible`): same amount and currency; not deleted; compatible status (a purchase never matches a declined or voided record; a decline matches only a decline); compatible kind and merchant; no conflicting known accounts; not already paired with this source; exactly one match. Identical text through another source goes through the same checks. The one exception: a reversal arriving again through a second channel may match the authorization that reversal voided.
 
 **Data protection is not weakened:**

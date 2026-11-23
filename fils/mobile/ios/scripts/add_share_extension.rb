@@ -66,5 +66,10 @@ end
 ext_group = project.main_group['ShareExtension']
 xc_ref = ext_group.files.find { |f| f.path == 'ShareExtension.xcconfig' } || ext_group.new_file('ShareExtension.xcconfig')
 ext.build_configurations.each { |c| c.base_configuration_reference = xc_ref }
+# Privacy manifests (required-reason APIs used by CaptureInbox.swift), one per target.
+{ runner => runner_group, ext => ext_group }.each do |target, group|
+  ref = group.files.find { |f| f.path == 'PrivacyInfo.xcprivacy' } || group.new_file('PrivacyInfo.xcprivacy')
+  target.resources_build_phase.add_file_reference(ref, true) unless target.resources_build_phase.files_references.include?(ref)
+end
 project.save
 puts "ShareExtension target present: #{project.targets.map(&:name).inspect}"

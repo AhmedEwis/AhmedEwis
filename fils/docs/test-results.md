@@ -6,6 +6,35 @@ Only checks that were actually run are listed.
 - **CI:** GitHub Actions (ubuntu-24.04, macos-15).
 - **Devices:** no physical iPhone or Android device, and no emulator (no KVM).
 
+## 0b. Codex review, round 3: ambiguous settlement and conditional Dismiss
+
+**Reproduction on `e81f2d7`:** a throwaway repro test, not committed because its Dismiss case deliberately calls the old UI statement from `review_screen.dart:247-249`. Its scenarios are carried into the regression tests below.
+
+| Finding | Repro | Before |
+|---|---|---|
+| 1. Settlement picks the first authorization | Pending 10.000 and 12.000 (same merchant and account), then settlement 11.000 | `settledPending` (applied to the first match) |
+| 1. Cross-source re-delivery | The same settlement via a notification | **Settled the other authorization** too (0 pending left) |
+| 2. Unconditional Dismiss | Separate, then the UI Dismiss statement | Status overwritten from `posted` to `ignored` (the transaction stayed, the event said ignored) |
+
+**Fix** (`ingestion.dart`, `review_screen.dart`):
+- **Settlement:** every qualifying authorization is collected (`_isSettlementOf`). Exactly one is settled. More than one means the settlement is **held** with all of them as candidates. **Same transaction** settles exactly the chosen one, in one database transaction, and only an offered candidate is accepted.
+- **Re-deliveries:** a re-delivery of the same text through another channel is never applied as a second settlement. If the original is held, the re-delivery is held with it and resolved (or dismissed) together. If the original was already applied, the re-delivery merges into the record it produced.
+- **Dismiss:** now `IngestionService.dismissHeld`, a conditional `status = held` update inside a transaction. It returns whether it applied, and the UI shows "Already resolved" otherwise.
+
+**Regression tests:** `test/core/settlement_dismiss_test.dart` (12 tests):
+- Hold, with both candidates offered.
+- Choosing an authorization settles exactly that one, under a crash mid-resolution, a retry, the other choice and a restart.
+- A transaction outside the suggested set is refused.
+- Re-delivery after resolution and while held.
+- Separate purchase.
+- A single qualifying authorization still settles directly.
+- Dismiss in both orders against Same and against Separate, and Dismiss resolving a held re-delivery.
+- **Competing connections:** two `AppDatabase` connections on one file in WAL mode, 24 races (Dismiss vs Separate and Dismiss vs Same, both issue orders). The results were *dismiss won 12, resolution won 12*. No race ever produced a dismissed event with a transaction, or a resolution overwritten by a dismissal.
+
+**Full run:** `FILS_E2E_API=… flutter test test/core test/perf test/e2e` → **171 passed, 0 failed**, three consecutive runs. An earlier run showed 3 E2E failures only because the local backend process had stopped (health check `000`); after a restart, all passed. `flutter analyze` → 0 errors, 0 warnings.
+
+**TestFlight prep:** added `PrivacyInfo.xcprivacy` to Runner and ShareExtension, declaring only the required-reason API used by our own Swift code (file timestamps, `C617.1`, in `CaptureInbox.swift`). The archive check now verifies both are bundled.
+
 ## 0a. Codex review, round 2: dedupe paths and unresolved duplicates
 
 **Reproduction:** five tests written against the previous commit (`55a6ec4`) using only `ingest()`. **All 5 failed there**, and all pass now.
