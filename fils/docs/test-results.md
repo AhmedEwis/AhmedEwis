@@ -6,6 +6,32 @@ Only checks that were actually run are listed.
 - **CI:** GitHub Actions (ubuntu-24.04, macos-15).
 - **Devices:** no physical iPhone or Android device, and no emulator (no KVM).
 
+## 0c. Codex review, round 4: held-group identity and the settlement predicate
+
+**Reproduction on `5b7d6fc`:** `test/core/held_identity_test.dart` was written and run before the fix. **8 tests failed:**
+
+| Finding | Scenario | Before |
+|---|---|---|
+| 1. `_resolveHeldTwins` bulk-resolved by hash, time and channel | NBK (SMS) and KFH (notification) both own a card •1234. Each holds the identical settlement text independently. Same, Separate or Dismiss on either bank | **All 6 cases failed.** The other bank's held capture turned `merged` or `ignored`, and its raw text and candidates were wiped |
+| 1. | Same bank, conflicting accounts (two NBK accounts •1234), identical text via SMS and notification | Grouped and resolved together |
+| 2. `_isSettlementOf` didn't check the incoming kind and status | Shortcut pending 10.000, repeated with a new run ID, then **Same transaction** | `settledPending`: the repeated authorization "settled" it |
+
+**Fix** (`ingestion.dart`, schema v3 column `source_events.held_group`):
+- Captures are grouped only through **explicit membership**. A held capture joins another only when both resolve to the **same known account** and their banks don't conflict (`_sameVerifiedAccount`). Unknown identity on either side means no join.
+- Same, Separate and Dismiss resolve **only members of that group**, re-verifying each member's account first. The text-hash bulk update is gone.
+- `_isSettlementOf` now requires the incoming message to be a **posted purchase**. The ingest path and `confirmSameTransaction` share this predicate.
+
+**Results:** `held_identity_test.dart`, 10 tests, all pass:
+- 6 cross-bank cases (Same, Separate, Dismiss × act on NBK or on KFH). Each checks the other capture's status, raw text, candidates, notes and every transaction on its account, then that it can still be resolved on its own.
+- Same bank with conflicting accounts.
+- A genuine same-account re-delivery is still grouped.
+- **Shortcut repeat → Same → still pending at 10.000**, then the real settlement: **exactly 1 transaction, posted, 11.000** (spending 11.000, not 21.000).
+- A second pending authorization never settles the first.
+
+**Also fixed:** a pre-existing flaky assertion in `test/e2e/backend_sync_e2e_test.dart`. It used `expect(() => api.pull(null), throwsA(...))` without `await` and recorded consent immediately after, so it intermittently raced (1 failure in about 8 runs). It is now `await expectLater(...)`; 8 out of 8 isolated runs pass.
+
+**Full run:** `FILS_E2E_API=… flutter test test/core test/perf test/e2e` → **181 passed, 0 failed**, three consecutive runs. `flutter analyze` → 0 errors, 0 warnings.
+
 ## 0b. Codex review, round 3: ambiguous settlement and conditional Dismiss
 
 **Reproduction on `e81f2d7`:** a throwaway repro test, not committed because its Dismiss case deliberately calls the old UI statement from `review_screen.dart:247-249`. Its scenarios are carried into the regression tests below.

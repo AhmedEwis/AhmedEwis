@@ -3562,6 +3562,17 @@ class $SourceEventsTable extends SourceEvents
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _heldGroupMeta = const VerificationMeta(
+    'heldGroup',
+  );
+  @override
+  late final GeneratedColumn<String> heldGroup = GeneratedColumn<String>(
+    'held_group',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3583,6 +3594,7 @@ class $SourceEventsTable extends SourceEvents
     createdAt,
     counterLast4,
     matchCandidates,
+    heldGroup,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3734,6 +3746,12 @@ class $SourceEventsTable extends SourceEvents
         ),
       );
     }
+    if (data.containsKey('held_group')) {
+      context.handle(
+        _heldGroupMeta,
+        heldGroup.isAcceptableOrUnknown(data['held_group']!, _heldGroupMeta),
+      );
+    }
     return context;
   }
 
@@ -3819,6 +3837,10 @@ class $SourceEventsTable extends SourceEvents
         DriftSqlType.string,
         data['${effectivePrefix}match_candidates'],
       ),
+      heldGroup: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}held_group'],
+      ),
     );
   }
 
@@ -3852,6 +3874,11 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
 
   /// v3: for a held possible duplicate, the candidate transaction ids (comma-separated).
   final String? matchCandidates;
+
+  /// v3: explicit group of held captures that are the same message delivered through
+  /// several channels on the same verified account (root event id). Resolution only
+  /// ever touches members of this group.
+  final String? heldGroup;
   const SourceEventRow({
     required this.id,
     required this.source,
@@ -3872,6 +3899,7 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
     required this.createdAt,
     this.counterLast4,
     this.matchCandidates,
+    this.heldGroup,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3921,6 +3949,9 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
     if (!nullToAbsent || matchCandidates != null) {
       map['match_candidates'] = Variable<String>(matchCandidates);
     }
+    if (!nullToAbsent || heldGroup != null) {
+      map['held_group'] = Variable<String>(heldGroup);
+    }
     return map;
   }
 
@@ -3969,6 +4000,9 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
       matchCandidates: matchCandidates == null && nullToAbsent
           ? const Value.absent()
           : Value(matchCandidates),
+      heldGroup: heldGroup == null && nullToAbsent
+          ? const Value.absent()
+          : Value(heldGroup),
     );
   }
 
@@ -3997,6 +4031,7 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       counterLast4: serializer.fromJson<String?>(json['counterLast4']),
       matchCandidates: serializer.fromJson<String?>(json['matchCandidates']),
+      heldGroup: serializer.fromJson<String?>(json['heldGroup']),
     );
   }
   @override
@@ -4022,6 +4057,7 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'counterLast4': serializer.toJson<String?>(counterLast4),
       'matchCandidates': serializer.toJson<String?>(matchCandidates),
+      'heldGroup': serializer.toJson<String?>(heldGroup),
     };
   }
 
@@ -4045,6 +4081,7 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
     DateTime? createdAt,
     Value<String?> counterLast4 = const Value.absent(),
     Value<String?> matchCandidates = const Value.absent(),
+    Value<String?> heldGroup = const Value.absent(),
   }) => SourceEventRow(
     id: id ?? this.id,
     source: source ?? this.source,
@@ -4071,6 +4108,7 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
     matchCandidates: matchCandidates.present
         ? matchCandidates.value
         : this.matchCandidates,
+    heldGroup: heldGroup.present ? heldGroup.value : this.heldGroup,
   );
   SourceEventRow copyWithCompanion(SourceEventsCompanion data) {
     return SourceEventRow(
@@ -4109,6 +4147,7 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
       matchCandidates: data.matchCandidates.present
           ? data.matchCandidates.value
           : this.matchCandidates,
+      heldGroup: data.heldGroup.present ? data.heldGroup.value : this.heldGroup,
     );
   }
 
@@ -4133,7 +4172,8 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
           ..write('purgeAfter: $purgeAfter, ')
           ..write('createdAt: $createdAt, ')
           ..write('counterLast4: $counterLast4, ')
-          ..write('matchCandidates: $matchCandidates')
+          ..write('matchCandidates: $matchCandidates, ')
+          ..write('heldGroup: $heldGroup')
           ..write(')'))
         .toString();
   }
@@ -4159,6 +4199,7 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
     createdAt,
     counterLast4,
     matchCandidates,
+    heldGroup,
   );
   @override
   bool operator ==(Object other) =>
@@ -4182,7 +4223,8 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
           other.purgeAfter == this.purgeAfter &&
           other.createdAt == this.createdAt &&
           other.counterLast4 == this.counterLast4 &&
-          other.matchCandidates == this.matchCandidates);
+          other.matchCandidates == this.matchCandidates &&
+          other.heldGroup == this.heldGroup);
 }
 
 class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
@@ -4205,6 +4247,7 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
   final Value<DateTime> createdAt;
   final Value<String?> counterLast4;
   final Value<String?> matchCandidates;
+  final Value<String?> heldGroup;
   final Value<int> rowid;
   const SourceEventsCompanion({
     this.id = const Value.absent(),
@@ -4226,6 +4269,7 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
     this.createdAt = const Value.absent(),
     this.counterLast4 = const Value.absent(),
     this.matchCandidates = const Value.absent(),
+    this.heldGroup = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SourceEventsCompanion.insert({
@@ -4248,6 +4292,7 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
     required DateTime createdAt,
     this.counterLast4 = const Value.absent(),
     this.matchCandidates = const Value.absent(),
+    this.heldGroup = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        source = Value(source),
@@ -4275,6 +4320,7 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
     Expression<DateTime>? createdAt,
     Expression<String>? counterLast4,
     Expression<String>? matchCandidates,
+    Expression<String>? heldGroup,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4297,6 +4343,7 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
       if (createdAt != null) 'created_at': createdAt,
       if (counterLast4 != null) 'counter_last4': counterLast4,
       if (matchCandidates != null) 'match_candidates': matchCandidates,
+      if (heldGroup != null) 'held_group': heldGroup,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4321,6 +4368,7 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
     Value<DateTime>? createdAt,
     Value<String?>? counterLast4,
     Value<String?>? matchCandidates,
+    Value<String?>? heldGroup,
     Value<int>? rowid,
   }) {
     return SourceEventsCompanion(
@@ -4343,6 +4391,7 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
       createdAt: createdAt ?? this.createdAt,
       counterLast4: counterLast4 ?? this.counterLast4,
       matchCandidates: matchCandidates ?? this.matchCandidates,
+      heldGroup: heldGroup ?? this.heldGroup,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4407,6 +4456,9 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
     if (matchCandidates.present) {
       map['match_candidates'] = Variable<String>(matchCandidates.value);
     }
+    if (heldGroup.present) {
+      map['held_group'] = Variable<String>(heldGroup.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4435,6 +4487,7 @@ class SourceEventsCompanion extends UpdateCompanion<SourceEventRow> {
           ..write('createdAt: $createdAt, ')
           ..write('counterLast4: $counterLast4, ')
           ..write('matchCandidates: $matchCandidates, ')
+          ..write('heldGroup: $heldGroup, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -13648,6 +13701,7 @@ typedef $$SourceEventsTableCreateCompanionBuilder =
       required DateTime createdAt,
       Value<String?> counterLast4,
       Value<String?> matchCandidates,
+      Value<String?> heldGroup,
       Value<int> rowid,
     });
 typedef $$SourceEventsTableUpdateCompanionBuilder =
@@ -13671,6 +13725,7 @@ typedef $$SourceEventsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<String?> counterLast4,
       Value<String?> matchCandidates,
+      Value<String?> heldGroup,
       Value<int> rowid,
     });
 
@@ -13775,6 +13830,11 @@ class $$SourceEventsTableFilterComposer
 
   ColumnFilters<String> get matchCandidates => $composableBuilder(
     column: $table.matchCandidates,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get heldGroup => $composableBuilder(
+    column: $table.heldGroup,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -13882,6 +13942,11 @@ class $$SourceEventsTableOrderingComposer
     column: $table.matchCandidates,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get heldGroup => $composableBuilder(
+    column: $table.heldGroup,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SourceEventsTableAnnotationComposer
@@ -13965,6 +14030,9 @@ class $$SourceEventsTableAnnotationComposer
     column: $table.matchCandidates,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get heldGroup =>
+      $composableBuilder(column: $table.heldGroup, builder: (column) => column);
 }
 
 class $$SourceEventsTableTableManager
@@ -14017,6 +14085,7 @@ class $$SourceEventsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<String?> counterLast4 = const Value.absent(),
                 Value<String?> matchCandidates = const Value.absent(),
+                Value<String?> heldGroup = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SourceEventsCompanion(
                 id: id,
@@ -14038,6 +14107,7 @@ class $$SourceEventsTableTableManager
                 createdAt: createdAt,
                 counterLast4: counterLast4,
                 matchCandidates: matchCandidates,
+                heldGroup: heldGroup,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -14061,6 +14131,7 @@ class $$SourceEventsTableTableManager
                 required DateTime createdAt,
                 Value<String?> counterLast4 = const Value.absent(),
                 Value<String?> matchCandidates = const Value.absent(),
+                Value<String?> heldGroup = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SourceEventsCompanion.insert(
                 id: id,
@@ -14082,6 +14153,7 @@ class $$SourceEventsTableTableManager
                 createdAt: createdAt,
                 counterLast4: counterLast4,
                 matchCandidates: matchCandidates,
+                heldGroup: heldGroup,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -105,6 +105,10 @@ class SourceEvents extends Table {
   TextColumn get counterLast4 => text().nullable()();
   /// v3: for a held possible duplicate, the candidate transaction ids (comma-separated).
   TextColumn get matchCandidates => text().nullable()();
+  /// v3: explicit group of held captures that are the same message delivered through
+  /// several channels on the same verified account (root event id). Resolution only
+  /// ever touches members of this group.
+  TextColumn get heldGroup => text().nullable()();
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -338,6 +342,9 @@ class AppDatabase extends _$AppDatabase {
             }
             if (!cols.any((r) => r.data['name'] == 'match_candidates')) {
               await m.addColumn(sourceEvents, sourceEvents.matchCandidates);
+            }
+            if (!cols.any((r) => r.data['name'] == 'held_group')) {
+              await m.addColumn(sourceEvents, sourceEvents.heldGroup);
             }
             await customStatement('''
               UPDATE source_events SET platform_id = platform_id || '#dup-' || id

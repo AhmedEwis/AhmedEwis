@@ -31,6 +31,13 @@ All four findings were reproduced with failing tests on the old code, then fixed
 | Found while preparing the device test | A Shortcut retry double-posted, because each run has a new ID. Now an identical Shortcut text within 24 hours is a recorded duplicate, and the banner says "Already in Fils" |
 | Device path | `.github/workflows/ios-testflight.yml` (secret preflight, then archive, export, TestFlight upload), `ios/ExportOptions.plist`, `docs/device-acceptance.md` |
 
+## Round 6: response to your fourth review (held-group identity, settlement predicate)
+
+| Finding | Fix | Tests |
+|---|---|---|
+| 1. `_resolveHeldTwins` bulk update by hash, time and channel | Explicit `held_group` membership. Joining requires the same verified account (`_sameVerifiedAccount`); resolution touches only group members and re-verifies each | `held_identity_test.dart`: cross-bank × Same/Separate/Dismiss × both sides; conflicting accounts in one bank |
+| 2. `_isSettlementOf` lacked incoming guards | Requires an incoming `purchase` with `posted` status inside the shared predicate | Shortcut repeat → Same → stays pending; settlement → one transaction at 11.000 |
+
 ## Round 5: response to your third review (settlement ambiguity, Dismiss)
 
 | Finding | Fix | Tests |

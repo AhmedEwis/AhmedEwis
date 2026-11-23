@@ -51,7 +51,7 @@ void main() {
     expect(auth['access_token'], isNotNull);
 
     // Sync is refused before consent.
-    expect(() => api.pull(null), throwsA(isA<ApiException>().having((e) => e.code, 'code', 'consent_required')));
+    await expectLater(api.pull(null), throwsA(isA<ApiException>().having((e) => e.code, 'code', 'consent_required')));
     await api.recordConsent('cloud_sync', true, '2026-11-22');
 
     // Device A with every entity type.

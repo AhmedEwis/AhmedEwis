@@ -251,10 +251,24 @@ class IngestionService {
       }
       twins.add(tw);
     }
-    final heldTwin = twins.where((t) => t.status == kHeld).firstOrNull;
+    // Join a held capture only when both verifiably refer to the same account: both
+    // resolve to the same known account and the banks don't conflict. Text, time and
+    // channel alone never group captures (NBK and KFH can send identical text).
+    SourceEventRow? heldTwin;
+    for (final tw in twins.where((t) => t.status == kHeld)) {
+      if (await _sameVerifiedAccount(tw, parsed, account)) {
+        heldTwin = tw;
+        break;
+      }
+    }
     if (heldTwin != null) {
+      final group = heldTwin.heldGroup ?? heldTwin.id;
+      if (heldTwin.heldGroup == null) {
+        await (db.update(db.sourceEvents)..where((s) => s.id.equals(heldTwin!.id))).write(SourceEventsCompanion(heldGroup: Value(group)));
+      }
       return _hold(e, eventId, text, parsed, (heldTwin.matchCandidates ?? '').split(',').where((x) => x.isNotEmpty).toList(),
-          'Same message as a capture already waiting for your decision (via ${heldTwin.source}); resolved together with it.');
+          'Same message as a capture already waiting for your decision (via ${heldTwin.source}); resolved together with it.',
+          group: group);
     }
     final isRedelivery = twins.any((t) => t.transactionId != null);
 
@@ -329,6 +343,9 @@ class IngestionService {
   /// same account, same merchant, same currency, within ±20 % (tips, FX), and the
   /// authorization is at most 10 days older than the settlement.
   bool _isSettlementOf(TxRow p, ParsedEvent parsed, AccountRow? account, DateTime occurredAt) {
+    // Only an incoming *posted purchase* settles anything: a repeated or second pending
+    // authorization, a refund or a decline never does.
+    if (parsed.kind != TxKind.purchase || parsed.status != TxStatus.posted) return false;
     final amount = parsed.amount;
     if (amount == null || account == null) return false;
     if (p.deletedAt != null || p.status != TxStatuses.pending || p.accountId != account.id) return false;
@@ -347,24 +364,39 @@ class IngestionService {
     return IngestResult(IngestOutcome.settledPending, eventId, transactionId: p.id, parsed: parsed, message: 'settled');
   }
 
-  /// Held re-deliveries of the same message through another channel follow the
-  /// resolution of [ev] (same transaction, or dismissal), in the same transaction.
-  Future<void> _resolveHeldTwins(SourceEventRow ev, {String? txId, required String status}) =>
-      (db.update(db.sourceEvents)
-            ..where((s) =>
-                s.id.isNotValue(ev.id) &
-                s.status.equals(kHeld) &
-                s.textHash.equals(ev.textHash) &
-                s.source.isNotValue(ev.source) &
-                s.receivedAt.isBiggerOrEqualValue(ev.receivedAt.subtract(const Duration(minutes: 3))) &
-                s.receivedAt.isSmallerOrEqualValue(ev.receivedAt.add(const Duration(minutes: 3)))))
-          .write(SourceEventsCompanion(
-            status: Value(status),
-            transactionId: Value(txId),
-            rawText: const Value(null),
-            matchCandidates: const Value(null),
-            notes: Value('Resolved together with the same message via ${ev.source}.'),
-          ));
+  /// Whether held capture [other] verifiably refers to the same account as an event
+  /// parsed as [parsed] that resolved to [account]: both resolve to the same known
+  /// account, and the banks don't conflict. Unknown identity on either side is "no".
+  Future<bool> _sameVerifiedAccount(SourceEventRow other, ParsedEvent parsed, AccountRow? account) async {
+    if (account == null) return false;
+    if (other.bankId != null && parsed.bankId != null && other.bankId != parsed.bankId) return false;
+    if (other.rawText == null) return false;
+    final (_, otherParsed) = await _rehydrate(other);
+    final otherAccount = await _matchAccount(otherParsed);
+    return otherAccount != null && otherAccount.id == account.id;
+  }
+
+  /// Members of [ev]'s explicit held group follow its resolution (same transaction, or
+  /// dismissal), in the same database transaction. Membership was verified when each
+  /// capture joined, and is re-verified here: a member that doesn't resolve to the same
+  /// account is left untouched. Nothing outside the group is ever changed.
+  Future<void> _resolveHeldGroup(SourceEventRow ev, ParsedEvent parsed, AccountRow? account, {String? txId, required String status}) async {
+    final group = ev.heldGroup;
+    if (group == null) return;
+    final members = await (db.select(db.sourceEvents)
+          ..where((s) => s.heldGroup.equals(group) & s.status.equals(kHeld) & s.id.isNotValue(ev.id)))
+        .get();
+    for (final m in members) {
+      if (!await _sameVerifiedAccount(m, parsed, account)) continue;
+      await (db.update(db.sourceEvents)..where((s) => s.id.equals(m.id) & s.status.equals(kHeld))).write(SourceEventsCompanion(
+        status: Value(status),
+        transactionId: Value(txId),
+        rawText: const Value(null),
+        matchCandidates: const Value(null),
+        notes: Value('Resolved together with the same message via ${ev.source}.'),
+      ));
+    }
+  }
 
   /// One eligibility rule set for every deduplication path.
   Future<bool> _eligible(TxRow c, RawEvent e, String eventId, ParsedEvent p, AccountRow? account, Map<String, AccountRow> accounts,
@@ -390,8 +422,9 @@ class IngestionService {
     return true;
   }
 
-  Future<IngestResult> _hold(RawEvent e, String eventId, String text, ParsedEvent parsed, List<String> candidates, String note) async {
-    await _complete(e, eventId, text, parsed, kHeld, keepRaw: true, notes: note, candidates: candidates);
+  Future<IngestResult> _hold(RawEvent e, String eventId, String text, ParsedEvent parsed, List<String> candidates, String note,
+      {String? group}) async {
+    await _complete(e, eventId, text, parsed, kHeld, keepRaw: true, notes: note, candidates: candidates, group: group);
     return IngestResult(IngestOutcome.possibleDuplicate, eventId, parsed: parsed, message: note);
   }
 
@@ -494,7 +527,7 @@ class IngestionService {
 
   /// Completes the claimed source event, in the same transaction as the financial writes.
   Future<void> _complete(RawEvent e, String eventId, String text, ParsedEvent parsed, String status,
-      {String? txId, bool keepRaw = false, String? notes, List<String>? candidates}) async {
+      {String? txId, bool keepRaw = false, String? notes, List<String>? candidates, String? group}) async {
     faultInjector?.call('after_financial_write');
     final now = store.now;
     final retainDays = int.tryParse(await store.getSetting(SettingKeys.retainRawDays) ?? '') ?? 30;
@@ -513,6 +546,7 @@ class IngestionService {
       bankId: Value(parsed.bankId),
       counterLast4: Value(parsed.counterAccountLast4),
       matchCandidates: Value(candidates == null || candidates.isEmpty ? null : candidates.join(',')),
+      heldGroup: group != null ? Value(group) : const Value.absent(),
       notes: Value(notes ?? (parsed.notes.isEmpty ? null : parsed.notes.join(' | '))),
       purgeAfter: Value(keepRaw ? now.add(Duration(days: retainDays)) : null),
     ));
@@ -543,7 +577,7 @@ class IngestionService {
           final accounts = {for (final a in await store.accounts()) a.id: a};
           r = await _mergeInto(c, e, ev.id, e.text, parsed, account, accounts, note: 'confirmed by you as the same transaction');
         }
-        await _resolveHeldTwins(ev, txId: c.id, status: 'merged');
+        await _resolveHeldGroup(ev, parsed, account, txId: c.id, status: 'merged');
         return r;
       }));
 
@@ -555,9 +589,10 @@ class IngestionService {
         if (ev.status != kHeld) return _alreadyResolved(ev);
         final (e, parsed) = await _rehydrate(ev);
         if (parsed.amount == null) throw StateError('capture can no longer be read');
-        final r = await _postNew(e, ev.id, e.text, parsed, await _matchAccount(parsed), await store.merchantAliasMap(),
+        final account = await _matchAccount(parsed);
+        final r = await _postNew(e, ev.id, e.text, parsed, account, await store.merchantAliasMap(),
             note: 'confirmed by you as a separate purchase');
-        await _resolveHeldTwins(ev, txId: r.transactionId, status: 'merged');
+        await _resolveHeldGroup(ev, parsed, account, txId: r.transactionId, status: 'merged');
         return r;
       }));
 
@@ -566,11 +601,20 @@ class IngestionService {
   /// so a late or competing Dismiss can't overwrite a completed resolution, and a
   /// completed Dismiss makes later Same/Separate taps no-ops. Returns whether it applied.
   Future<bool> dismissHeld(String eventId) => _withBusyRetry(() => db.transaction(() async {
+        final ev = await (db.select(db.sourceEvents)..where((s) => s.id.equals(eventId))).getSingleOrNull();
+        if (ev == null || ev.status != kHeld) return false;
+        // Identity of the dismissed capture, read before its text is cleared, so group
+        // members can be re-verified. If the text was purged, no member is touched.
+        ParsedEvent? parsed;
+        AccountRow? account;
+        if (ev.rawText != null) {
+          parsed = (await _rehydrate(ev)).$2;
+          account = await _matchAccount(parsed);
+        }
         final n = await (db.update(db.sourceEvents)..where((s) => s.id.equals(eventId) & s.status.equals(kHeld))).write(
             const SourceEventsCompanion(status: Value('ignored'), rawText: Value(null), matchCandidates: Value(null), notes: Value('Dismissed by you.')));
         if (n == 0) return false;
-        final ev = (await (db.select(db.sourceEvents)..where((s) => s.id.equals(eventId))).getSingle());
-        await _resolveHeldTwins(ev, status: 'ignored');
+        if (parsed != null) await _resolveHeldGroup(ev, parsed, account, status: 'ignored');
         return true;
       }));
 
