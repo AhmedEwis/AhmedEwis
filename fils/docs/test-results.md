@@ -35,6 +35,15 @@ Only checks that were actually run are listed.
 
 **TestFlight prep:** added `PrivacyInfo.xcprivacy` to Runner and ShareExtension, declaring only the required-reason API used by our own Swift code (file timestamps, `C617.1`, in `CaptureInbox.swift`). The archive check now verifies both are bundled.
 
+**CI at `dc7b235`:**
+- `mobile-ci` run `45152628227`: success (Android tests, iOS device and simulator builds).
+- `security` run `45152628207`: success.
+- `ios-testflight` run `45152628194`:
+  - `archive-unsigned`: success, *"Archive OK: app 0.2.0 (3000), extension embedded, versions match, privacy manifests bundled. UNSIGNED: not installable."*
+  - preflight: *"Missing secrets: APPLE_TEAM_ID APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_PRIVATE_KEY."*
+
+The screenshot suite re-ran: 4 variants passed.
+
 ## 0a. Codex review, round 2: dedupe paths and unresolved duplicates
 
 **Reproduction:** five tests written against the previous commit (`55a6ec4`) using only `ingest()`. **All 5 failed there**, and all pass now.
