@@ -29,10 +29,12 @@
   3. It completes the source event.
 
   A crash at any point rolls back everything. Because the claim is the first write, a second connection (UI engine vs headless engine) waits on SQLite's write lock, then sees the claim and returns `duplicate`. A failed event isn't acknowledged and stays in the inbox; the rest of the inbox continues.
-- **Events without a stable platform ID:**
-  - Paste and manual events are always processed. Identical text within 3 minutes is flagged *possible duplicate* for review, never dropped.
-  - Shortcuts give a new run ID each time, so the same message text via Shortcuts within 24 hours is treated as a replay: it's recorded as `duplicate`, linked to the original and not counted again, and the Shortcut banner says *"Already in Fils"*.
-  - Wallet events are excluded from that rule, because identical fields are normal for genuine repeat purchases.
+- **Possible duplicates are held, never counted twice and never dropped.** A capture is **held** when:
+  - the same message text arrives again from the same sender, on a compatible account, without a stable platform ID (paste within 3 minutes, or Shortcuts within 24 hours, since Shortcuts give a new run ID each time); or
+  - a cross-source match is ambiguous (more than one eligible transaction).
+
+  A held capture is a source event with status `held` and **no transaction**: no balance or spending effect and nothing to sync. Its input is kept (encrypted) and the candidate IDs are stored. The Review inbox offers **Same transaction** (choose which) or **Separate purchase**. Both resolutions are atomic and idempotent (`confirmSameTransaction`, `confirmSeparate`). A purchase that only needs a category check still counts as usual.
+- **One rule set for every dedupe path** (`_eligible`): same amount and currency; not deleted; compatible status (a purchase never matches a declined or voided record; a decline matches only a decline); compatible kind and merchant; no conflicting known accounts; not already paired with this source; exactly one match. Identical text through another source goes through the same checks. The one exception: a reversal arriving again through a second channel may match the authorization that reversal voided.
 
 **Data protection is not weakened:**
 - The database key stays in the Keychain or Keystore with `first_unlock_this_device`.

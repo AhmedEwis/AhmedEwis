@@ -26,10 +26,10 @@ void main() {
     expect(tx.needsReview, isFalse);
     expect(calculatedBalance((await s.account(acct.id))!, await s.transactionsForAccount(acct.id)), 994750);
     expect((await s.account(acct.id))!.reportedAvailableMinor, 994750);
-    expect((await ing.ingest(sc(m1, 'run-2', 1))).outcome, IngestOutcome.duplicate); // A7
+    expect((await ing.ingest(sc(m1, 'run-2', 1))).outcome, IngestOutcome.possibleDuplicate); // A7: held, not counted
     const m2 = '[SYNTHETIC] Purchase of KWD 2.000 at TALABAT card ending 1234. Available balance KWD 992.750';
     expect((await ing.ingest(sc(m2, 'run-3', 5))).outcome, IngestOutcome.posted); // A8
-    expect((await ing.ingest(sc(m2, 'run-4', 6))).outcome, IngestOutcome.duplicate); // A9
+    expect((await ing.ingest(sc(m2, 'run-4', 6))).outcome, IngestOutcome.possibleDuplicate); // A9
     final txs = await s.transactionsForAccount(acct.id);
     expect(txs.length, 2); // A10
     expect(calculatedBalance((await s.account(acct.id))!, txs), 992750);

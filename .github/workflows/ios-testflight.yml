@@ -19,7 +19,7 @@ on:
         default: true
   push:
     branches: [claude/kuwait-banks-aggregation-app-egj8k8]
-    paths: ['.github/workflows/ios-testflight.yml', 'fils/mobile/ios/ExportOptions.plist']
+    paths: ['.github/workflows/ios-testflight.yml', 'fils/mobile/ios/**', 'fils/mobile/pubspec.yaml']
 
 permissions:
   contents: read
@@ -59,6 +59,38 @@ jobs:
             echo "::notice::Missing secrets: ${missing[*]}. No signed build attempted."
             if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then exit 1; fi
           fi
+
+  # Proves the archive step works before any credentials exist. It produces an UNSIGNED
+  # .xcarchive (not installable) and checks what App Store Connect would reject:
+  # extension embedded, matching versions, bundle ids.
+  archive-unsigned:
+    runs-on: macos-15
+    defaults: { run: { working-directory: fils/mobile } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '${{ env.FLUTTER_VERSION }}', channel: stable, cache: true }
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: flutter build ios --release --no-codesign --build-number=3000 --dart-define=FILS_ENV=staging
+      - name: xcodebuild archive (unsigned)
+        run: |
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Fils.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" archive | tail -25
+      - name: Check archive contents
+        run: |
+          A="$RUNNER_TEMP/Fils.xcarchive/Products/Applications/Runner.app"
+          X="$A/PlugIns/ShareExtension.appex"
+          pb() { /usr/libexec/PlistBuddy -c "Print :$1" "$2"; }
+          test -d "$X"
+          [ "$(pb CFBundleIdentifier "$A/Info.plist")" = kw.fils.fils ]
+          [ "$(pb CFBundleIdentifier "$X/Info.plist")" = kw.fils.fils.ShareExtension ]
+          [ "$(pb CFBundleVersion "$A/Info.plist")" = "$(pb CFBundleVersion "$X/Info.plist")" ]
+          [ "$(pb CFBundleShortVersionString "$A/Info.plist")" = "$(pb CFBundleShortVersionString "$X/Info.plist")" ]
+          [ "$(pb CFBundleVersion "$A/Info.plist")" = 3000 ]
+          plutil -lint ios/ExportOptions.plist
+          echo "Archive OK: app $(pb CFBundleShortVersionString "$A/Info.plist") ($(pb CFBundleVersion "$A/Info.plist")), extension embedded, versions match. UNSIGNED: not installable." | tee -a "$GITHUB_STEP_SUMMARY"
 
   archive:
     needs: preflight

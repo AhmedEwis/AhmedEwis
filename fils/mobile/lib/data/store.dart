@@ -270,13 +270,16 @@ class FinanceStore {
     return q.watch();
   }
 
-  Stream<int> watchReviewCount() {
-    final c = db.transactions.id.count();
-    final q = db.selectOnly(db.transactions)
-      ..addColumns([c])
-      ..where(db.transactions.deletedAt.isNull() & db.transactions.needsReview.equals(true));
-    return q.watchSingle().map((r) => r.read(c) ?? 0);
-  }
+  /// Items waiting for the user: transactions flagged for review, plus captures with
+  /// no transaction yet (unreadable messages and held possible duplicates).
+  Stream<int> watchReviewCount() => db
+      .customSelect(
+        "SELECT (SELECT COUNT(*) FROM transactions WHERE deleted_at IS NULL AND needs_review = 1) + "
+        "(SELECT COUNT(*) FROM source_events WHERE status IN ('review', 'held') AND transaction_id IS NULL) AS n",
+        readsFrom: {db.transactions, db.sourceEvents},
+      )
+      .watchSingle()
+      .map((r) => r.read<int>('n'));
 
   /// Watches all effective transactions. Analytics recompute from this stream; the local
   /// database stays small enough (benchmarked in test/perf) for in-memory aggregation.

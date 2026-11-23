@@ -8,7 +8,9 @@ import 'package:drift/native.dart';
 import 'package:fils/app/app.dart';
 import 'package:fils/app/providers.dart';
 import 'package:fils/data/db/database.dart';
+import 'package:fils/core/parsing/models.dart';
 import 'package:fils/data/demo/demo_seed.dart';
+import 'package:fils/data/ingestion.dart';
 import 'package:fils/data/store.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -69,6 +71,11 @@ void main() {
           store = FinanceStore(AppDatabase(NativeDatabase.memory()), clock: () => now);
           await store.ensureSeeded();
           await DemoSeeder(store).seed(now: now);
+          // One held possible duplicate (synthetic), so the Review screen shows that card.
+          const dupText = '[SYNTHETIC] Purchase of KWD 1.500 at CARIBOU COFFEE card ending 4410';
+          final ing = IngestionService(store);
+          await ing.ingest(RawEvent(text: dupText, receivedAt: now.subtract(const Duration(minutes: 3)), source: SourceKind.shortcut, sourceId: 'shot-1', sender: 'NBK'));
+          await ing.ingest(RawEvent(text: dupText, receivedAt: now.subtract(const Duration(minutes: 2)), source: SourceKind.shortcut, sourceId: 'shot-2', sender: 'NBK'));
           await store.setSetting(SettingKeys.locale, locale);
           await store.setSetting(SettingKeys.themeMode, theme);
           await store.setSetting(SettingKeys.lastCaptureAt, now.subtract(const Duration(minutes: 12)).toIso8601String());

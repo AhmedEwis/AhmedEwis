@@ -59,15 +59,16 @@ void main() {
     expect((await s.allTransactions()).length, 1);
   });
 
-  test('two genuinely separate identical purchases are both kept (second flagged)', () async {
+  test('identical message moments later is held (kept, not counted); confirming separate keeps both', () async {
     final m = 'Purchase of KWD 1.500 at CARIBOU COFFEE card ending 1234';
     final a = await ing.ingest(sms(m, t0));
     final b = await ing.ingest(sms(m, t0.add(const Duration(seconds: 40))));
     expect(a.outcome, IngestOutcome.posted);
     expect(b.outcome, IngestOutcome.possibleDuplicate);
-    final txs = await s.allTransactions();
-    expect(txs.length, 2);
-    expect(txs.where((t) => t.needsReview).length, 1);
+    expect(b.transactionId, isNull);
+    expect((await s.allTransactions()).length, 1);
+    await ing.confirmSeparate(b.sourceEventId);
+    expect((await s.allTransactions()).length, 2);
   });
 
   test('same merchant+amount hours apart are separate (no amount+merchant-only dedupe)', () async {

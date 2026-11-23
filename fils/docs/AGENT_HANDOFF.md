@@ -31,6 +31,15 @@ All four findings were reproduced with failing tests on the old code, then fixed
 | Found while preparing the device test | A Shortcut retry double-posted, because each run has a new ID. Now an identical Shortcut text within 24 hours is a recorded duplicate, and the banner says "Already in Fils" |
 | Device path | `.github/workflows/ios-testflight.yml` (secret preflight, then archive, export, TestFlight upload), `ios/ExportOptions.plist`, `docs/device-acceptance.md` |
 
+## Round 4: response to your second ingestion review
+
+| Finding | Fix |
+|---|---|
+| 1. Hard Shortcut-text duplicate | Removed. Same-sender, compatible-account repeats without a stable platform ID are **held**: a source event with status `held`, no transaction, input kept and candidate IDs stored. The Review inbox offers *Same transaction* or *Separate purchase* (`confirmSameTransaction` / `confirmSeparate`, atomic and idempotent) |
+| 2. Text-equality early return | Removed. Text twins join the candidate pool and pass the same `_eligible` checks as semantic matches. The only exception is a reversal re-delivered through another channel, which may match the authorization it voided |
+| 3. Ambiguous matches counted | Ambiguous matches are held with no transaction. `needsReview` transactions still count (category-only review). See `test-results.md` §0a |
+| TestFlight prep | `archive-unsigned` job (a real `xcodebuild archive` with signing off; checks the extension, bundle IDs and versions) |
+
 ## Where to start (in order)
 
 1. `fils/README.md`: layout and quick start.

@@ -92,7 +92,7 @@ class SourceEvents extends Table {
   TextColumn get textHash => text()(); // sha256 of normalized text
   TextColumn get rawText => text().nullable()(); // only kept for review/retention window
   DateTimeColumn get receivedAt => dateTime()();
-  TextColumn get status => text()(); // posted|review|ignored|duplicate|failed|queued|merged
+  TextColumn get status => text()(); // processing|posted|review|held|ignored|duplicate|merged
   TextColumn get kind => text().nullable()();
   TextColumn get parserId => text().nullable()();
   TextColumn get parserVersion => text().nullable()();
@@ -103,6 +103,8 @@ class SourceEvents extends Table {
   DateTimeColumn get createdAt => dateTime()();
   /// v3: the other account named by a transfer message (last 4), kept as linking evidence.
   TextColumn get counterLast4 => text().nullable()();
+  /// v3: for a held possible duplicate, the candidate transaction ids (comma-separated).
+  TextColumn get matchCandidates => text().nullable()();
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -333,6 +335,9 @@ class AppDatabase extends _$AppDatabase {
             final cols = await customSelect("SELECT name FROM pragma_table_info('source_events')").get();
             if (!cols.any((r) => r.data['name'] == 'counter_last4')) {
               await m.addColumn(sourceEvents, sourceEvents.counterLast4);
+            }
+            if (!cols.any((r) => r.data['name'] == 'match_candidates')) {
+              await m.addColumn(sourceEvents, sourceEvents.matchCandidates);
             }
             await customStatement('''
               UPDATE source_events SET platform_id = platform_id || '#dup-' || id

@@ -122,24 +122,24 @@ void main() {
 
 
 void _shortcutRetryTests() {
-  test('device scenario: the same SMS imported twice through Shortcuts (new run id each time) counts once', () async {
+  test('device scenario: the same SMS imported twice through Shortcuts (new run id each time) counts once; retries are held', () async {
     final s = await newTestStore(now: DateTime.utc(2026, 11, 22, 9));
     const msg = '[SYNTHETIC] Purchase of KWD 5.250 at TALABAT card ending 1234 on 22/11/2026 12:00';
     final b = FakeBridge()..inbox.addAll([ev('run-A', msg), ev('run-B', msg)]);
     final sum = await runHeadlessCapture(bridge: b, store: s);
     expect(sum['posted'], 1);
-    expect(sum['duplicate'], 1);
+    expect(sum['review'], 1, reason: 'the retry is held for review');
     expect(sum['queued'], 0);
     // Retry again later (app closed, phone locked → headless path again).
     b.inbox.add(ev('run-C', msg));
     final sum2 = await runHeadlessCapture(bridge: b, store: s);
-    expect(sum2['duplicate'], 1);
+    expect(sum2['review'], 1);
     final txs = await s.allTransactions();
     expect(txs.length, 1);
     expect(txs.single.amountMinor, 5250);
-    final dupEvents = await (s.db.select(s.db.sourceEvents)..where((e) => e.status.equals('duplicate'))).get();
-    expect(dupEvents.length, 2, reason: 'retries are recorded, not silently dropped');
-    expect(dupEvents.every((e) => e.transactionId == txs.single.id), isTrue);
+    final held = await (s.db.select(s.db.sourceEvents)..where((e) => e.status.equals(kHeld))).get();
+    expect(held.length, 2, reason: 'retries are kept for the user, not silently dropped or counted');
+    expect(held.every((e) => e.transactionId == null), isTrue);
   });
 
   test('the same Shortcut text more than 24 h later is a new transaction', () async {

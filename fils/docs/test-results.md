@@ -6,6 +6,38 @@ Only checks that were actually run are listed.
 - **CI:** GitHub Actions (ubuntu-24.04, macos-15).
 - **Devices:** no physical iPhone or Android device, and no emulator (no KVM).
 
+## 0a. Codex review, round 2: dedupe paths and unresolved duplicates
+
+**Reproduction:** five tests written against the previous commit (`55a6ec4`) using only `ingest()`. **All 5 failed there**, and all pass now.
+
+| Finding | Repro test | Before | After |
+|---|---|---|---|
+| 1. Shortcut text hard-classified as duplicate, ignoring identity | Identical Shortcut text from a different sender | 1 transaction (second purchase lost) | 2 |
+| 1. | Same-sender Shortcut repeat | `duplicate` (dropped) | `possibleDuplicate`: held for review, no ledger effect |
+| 2. Text-equality early return bypasses account and status checks | Identical text: NBK SMS vs KFH notification, both own a card •1234 | 1 (merged across banks) | 2 |
+| 2. | Identical text via another source after the first record was deleted | `merged` into the deleted record | posted |
+| 3. Ambiguous match counted | Two Wallet KWD 1.500, then an ambiguous bank message | spending **4.500** | **3.000** |
+
+**New regression tests:**
+- `test/core/dedupe_resolution_test.dart` (10 tests):
+  - Ambiguous: held at 3.000.
+  - **Same transaction:** stays 3.000. A crash mid-resolution leaves it held. Double tap, a contradictory late tap and a tap after restart are no-ops. Replay of the bank message is a duplicate. No new transaction in the sync outbox.
+  - **Separate purchase:** **4.500 exactly once**, under the same crash, retry and restart checks. Exactly one new transaction in the outbox, and it counts normally (not flagged).
+  - A purchase that only needs category review still counts.
+  - Identical text from different banks and accounts (with and without card digits), different senders (paste, Shortcut), and deleted or voided records.
+  - The same reversal arriving through a second channel produces no bogus refund.
+- `test/e2e/dedupe_sync_e2e_test.dart` (live backend, two devices):
+  - Held captures never reach the server.
+  - Device B's spending is 6.000 while held, and 7.500 after one separate and one same resolution.
+  - Retried resolutions change nothing on either device.
+- Updated to the held behavior: `ingestion_test`, `ingestion_review_test`, `capture_recovery_test`, `device_scenario_test`.
+
+**Also fixed:** under parallel load, the two-connection test once hit `SQLITE_BUSY` (`database is locked` on `BEGIN IMMEDIATE`) after the 5-second busy timeout. Ingestion and resolution now retry lock timeouts with backoff, up to 5 attempts. Across 4 consecutive full runs, there were no failures.
+
+**Full run:** `FILS_E2E_API=http://127.0.0.1:8099 flutter test test/core test/perf test/e2e` → **159 passed, 0 failed**. `flutter analyze` → **0 errors, 0 warnings**.
+
+**Screenshots:** `FILS_SCREENSHOTS=1 … flutter test test/screenshots --update-goldens` → 4 variants passed. The Review screen now shows the held card (*Same transaction / Separate purchase / Dismiss*) in EN, AR (RTL), light and dark.
+
 ## 0. Codex ingestion review: reproduce, fix, regression-test
 
 Every test below was first run against the unfixed code (`0be447d`), with only a no-op test hook added so it compiles. **11 of the 16 new tests failed there**, which reproduces every reported issue. The other 5 are guards against overcorrection (same-source decline, repeated purchases, linking with evidence, the existing unique index, paste without an ID). With the fixes, all of them pass.

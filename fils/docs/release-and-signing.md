@@ -50,7 +50,7 @@ Without `key.properties`, release builds are produced **unsigned**. The build ne
 
 **Status:** no Apple Developer team, certificate, provisioning profile or App Store Connect key exists in this repository or its CI. The Xcode project has no `DEVELOPMENT_TEAM`. The iOS app is **compiled** in CI (unsigned), but it is **not signed, not uploaded and not installable** on an iPhone yet.
 
-The pipeline is ready: [`.github/workflows/ios-testflight.yml`](../../.github/workflows/ios-testflight.yml) archives with automatic signing through an App Store Connect API key, exports `ios/ExportOptions.plist` (`app-store-connect`), checks the Share Extension is embedded and signed, uploads to TestFlight with `altool`, and deletes the key from the runner. The test build uses `FILS_ENV=staging` with no API URL, so it's fully local, with no backend, AI, voice or subscriptions. On every push to the branch, its preflight job lists which prerequisites are missing without attempting a build.
+The pipeline is ready: [`.github/workflows/ios-testflight.yml`](../../.github/workflows/ios-testflight.yml) archives with automatic signing through an App Store Connect API key, exports `ios/ExportOptions.plist` (`app-store-connect`), checks the Share Extension is embedded and signed, uploads to TestFlight with `altool`, and deletes the key from the runner. The test build uses `FILS_ENV=staging` with no API URL, so it's fully local, with no backend, AI, voice or subscriptions. On every push that touches iOS files, its preflight job lists which prerequisites are missing without attempting a signed build. An `archive-unsigned` job runs a real `xcodebuild archive` with signing off and checks that the Share Extension is embedded and that the app and extension bundle IDs and versions match.
 
 ### Prerequisites (one time, done by the account holder; never pasted into chat)
 
@@ -58,7 +58,7 @@ The pipeline is ready: [`.github/workflows/ios-testflight.yml`](../../.github/wo
 2. In **App Store Connect → Apps → +**, create an app record with bundle ID `kw.fils.fils` (register the identifier first under Certificates, Identifiers & Profiles if it isn't offered). Automatic signing in CI registers the App Group `group.kw.fils`, Sign in with Apple and the `kw.fils.fils.ShareExtension` identifier, provided the key below has the **Admin** role. With **App Manager**, create those identifiers by hand first.
 3. In **App Store Connect → Users and Access → Integrations → App Store Connect API**, create a team key and download `AuthKey_<KEYID>.p8` (it can be downloaded only once).
 4. In **GitHub → this repository → Settings → Secrets and variables → Actions**, add `APPLE_TEAM_ID`, `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID` and `APP_STORE_CONNECT_PRIVATE_KEY` (the full `.p8` text).
-5. **Actions → ios-testflight → Run workflow.** After Apple's processing (usually 5–30 minutes), add yourself as an internal tester in TestFlight and install the build. Internal testing needs no App Review.
+5. **Actions → ios-testflight → Run workflow.** On the first build, App Store Connect asks the **export compliance** question. The app uses HTTPS and an encrypted local database (SQLite3 Multiple Ciphers). The account holder must answer it; Info.plist deliberately doesn't declare `ITSAppUsesNonExemptEncryption`, because that's a legal determination. After Apple's processing (usually 5–30 minutes), add yourself as an internal tester in TestFlight and install the build. Internal testing needs no App Review.
 
 Then run [device-acceptance.md](device-acceptance.md).
 

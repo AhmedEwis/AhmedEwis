@@ -85,7 +85,10 @@ void main() {
       await ing.ingest(ev(m, t0, src: SourceKind.paste));
       final r = await ing.ingest(ev(m, t0.add(const Duration(seconds: 30)), src: SourceKind.paste));
       expect(r.outcome, IngestOutcome.possibleDuplicate);
-      expect((await live(s)).length, 2);
+      expect((await live(s)).length, 1, reason: 'held: no second financial effect');
+      final held = await (s.db.select(s.db.sourceEvents)..where((x) => x.id.equals(r.sourceEventId))).getSingle();
+      expect(held.status, kHeld);
+      expect(held.rawText, m, reason: 'kept so the user can resolve it');
     });
   });
 
@@ -190,14 +193,18 @@ void main() {
       expect(spent(txs, t0), 3000);
     });
 
-    test('ambiguous match (two candidates) goes to review instead of merging', () async {
+    test('ambiguous match (two candidates) is held without ledger effect until resolved', () async {
       final s = await newTestStore(now: t0);
       final ing = IngestionService(s);
       await ing.ingest(ev('', t0, src: SourceKind.wallet, id: 'wa', fields: {'merchant': 'Caribou Coffee', 'amount': 'KWD 1.500'}));
       await ing.ingest(ev('', t0.add(const Duration(minutes: 1)), src: SourceKind.wallet, id: 'wb', fields: {'merchant': 'Caribou Coffee', 'amount': 'KWD 1.500'}));
+      expect(spent(await live(s), t0), 3000);
       final r = await ing.ingest(ev('Purchase of KWD 1.500 at CARIBOU COFFEE card ending 1234', t0.add(const Duration(minutes: 2)), sender: 'NBK'));
-      expect(r.outcome, IngestOutcome.review);
-      expect((await live(s)).where((t) => t.needsReview).length, 1);
+      expect(r.outcome, IngestOutcome.possibleDuplicate);
+      expect(r.transactionId, isNull);
+      expect(spent(await live(s), t0), 3000);
+      final held = await (s.db.select(s.db.sourceEvents)..where((x) => x.id.equals(r.sourceEventId))).getSingle();
+      expect(held.matchCandidates!.split(',').length, 2);
     });
   });
 

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart' show Value, OrderingTerm, OrderingMode, BooleanExpressionOperators;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,7 @@ import '../../app/services.dart';
 import '../../core/parsing/sanitizer.dart';
 import '../../core/time/kuwait_time.dart';
 import '../../data/db/database.dart';
+import '../../data/ingestion.dart' show kHeld;
 import '../../l10n/strings.dart';
 import '../../ui/theme/theme.dart';
 import '../../ui/widgets/common.dart';
@@ -22,6 +25,14 @@ final _unparsedProvider = StreamProvider<List<SourceEventRow>>((ref) {
       .watch();
 });
 
+final _heldProvider = StreamProvider<List<SourceEventRow>>((ref) {
+  final db = ref.watch(storeProvider).db;
+  return (db.select(db.sourceEvents)
+        ..where((s) => s.status.equals(kHeld))
+        ..orderBy([(s) => OrderingTerm(expression: s.receivedAt, mode: OrderingMode.desc)]))
+      .watch();
+});
+
 final _reviewTxProvider = StreamProvider<List<TxRow>>((ref) => ref.watch(storeProvider).watchTransactions(needsReview: true, limit: 200));
 
 class ReviewScreen extends ConsumerWidget {
@@ -32,6 +43,7 @@ class ReviewScreen extends ConsumerWidget {
     final s = S.of(context);
     final p = context.fp;
     final unparsed = ref.watch(_unparsedProvider).value ?? const [];
+    final held = ref.watch(_heldProvider).value ?? const [];
     final txs = ref.watch(_reviewTxProvider).value ?? const [];
     final fmt = ref.watch(settingsProvider).fmt;
     final cats = ref.watch(categoryMapProvider);
@@ -39,9 +51,15 @@ class ReviewScreen extends ConsumerWidget {
     final store = ref.watch(storeProvider);
     return Scaffold(
       appBar: AppBar(title: Text(s.reviewInbox)),
-      body: unparsed.isEmpty && txs.isEmpty
+      body: unparsed.isEmpty && txs.isEmpty && held.isEmpty
           ? EmptyState(emoji: '✅', title: s.reviewEmpty)
           : ListView(padding: const EdgeInsets.all(16), children: [
+              if (held.isNotEmpty) ...[
+                Text(s.ar ? 'تكرار محتمل: غير محتسب حتى تؤكد' : 'Possible duplicates: not counted until you decide', style: context.tt.titleSmall),
+                const SizedBox(height: 8),
+                for (final e in held) _HeldCard(e: e),
+                const SizedBox(height: 20),
+              ],
               if (txs.isNotEmpty) ...[
                 Text(s.ar ? 'عمليات بحاجة لتأكيد' : 'Transactions to confirm', style: context.tt.titleSmall),
                 const SizedBox(height: 8),
@@ -146,5 +164,96 @@ class ReviewScreen extends ConsumerWidget {
     } catch (err) {
       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.genericError)));
     }
+  }
+}
+
+/// A held possible duplicate. No transaction exists for it, so it has no effect on
+/// balances or spending until the user resolves it.
+class _HeldCard extends ConsumerWidget {
+  final SourceEventRow e;
+  const _HeldCard({required this.e});
+
+  String _summary(SourceEventRow e) {
+    final raw = e.rawText;
+    if (raw == null) return '';
+    if (e.source != 'wallet') return raw;
+    try {
+      final m = jsonDecode(raw) as Map;
+      return [m['merchant'] ?? m['name'], m['amount'], m['card']].where((x) => x != null && '$x'.trim().isNotEmpty).join(' · ');
+    } catch (_) {
+      return raw;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = S.of(context);
+    final p = context.fp;
+    final store = ref.watch(storeProvider);
+    final ing = ref.watch(ingestionProvider);
+    final fmt = ref.watch(settingsProvider).fmt;
+    final cats = ref.watch(categoryMapProvider);
+    final accts = {for (final a in ref.watch(allAccountsProvider).value ?? const <AccountRow>[]) a.id: a};
+    final ids = (e.matchCandidates ?? '').split(',').where((x) => x.isNotEmpty).toList();
+    Future<void> run(Future<void> Function() f) async {
+      try {
+        await f();
+      } catch (err) {
+        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$err'.replaceFirst('Bad state: ', ''))));
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: FCard(
+        child: FutureBuilder<List<TxRow>>(
+          future: Future.wait(ids.map(store.transaction)).then((l) => l.whereType<TxRow>().where((t) => t.deletedAt == null).toList()),
+          builder: (context, snap) {
+            final cands = snap.data ?? const <TxRow>[];
+            return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Row(children: [
+                Pill(e.sender ?? e.source, bg: p.warningBg, fg: p.warning),
+                const Spacer(),
+                Text('${fmt.dayMonth(ReportingZone.kuwait.toWall(e.receivedAt))} ${fmt.time(ReportingZone.kuwait.toWall(e.receivedAt))}', style: context.tt.bodySmall),
+              ]),
+              const SizedBox(height: 8),
+              Text(_summary(e), style: context.tt.bodyMedium),
+              if (e.notes != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(e.notes!, style: context.tt.bodySmall?.copyWith(color: p.inkSecondary))),
+              if (cands.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(s.ar ? 'يشبه:' : 'Looks like:', style: context.tt.labelMedium),
+                for (final t in cands) TxTile(t: t, cats: cats, accounts: accts, fmt: fmt),
+              ],
+              const SizedBox(height: 8),
+              Wrap(spacing: 8, runSpacing: 4, children: [
+                if (cands.isNotEmpty)
+                  FilledButton.tonal(
+                    onPressed: () => run(() async {
+                      var target = cands.length == 1 ? cands.single : null;
+                      target ??= await showFSheet<TxRow>(
+                        context,
+                        Column(mainAxisSize: MainAxisSize.min, children: [
+                          for (final t in cands) TxTile(t: t, cats: cats, accounts: accts, fmt: fmt, onTap: () => Navigator.of(context).pop(t)),
+                        ]),
+                      );
+                      if (target != null) await ing.confirmSameTransaction(e.id, target.id);
+                    }),
+                    child: Text(s.ar ? 'نفس العملية' : 'Same transaction'),
+                  ),
+                OutlinedButton(
+                  onPressed: () => run(() async => ing.confirmSeparate(e.id)),
+                  child: Text(s.ar ? 'عملية منفصلة' : 'Separate purchase'),
+                ),
+                TextButton(
+                  onPressed: () => (store.db.update(store.db.sourceEvents)..where((x) => x.id.equals(e.id)))
+                      .write(const SourceEventsCompanion(status: Value('ignored'), rawText: Value(null), matchCandidates: Value(null))),
+                  child: Text(s.dismiss),
+                ),
+              ]),
+            ]);
+          },
+        ),
+      ),
+    );
   }
 }
