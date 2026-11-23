@@ -1,0 +1,23 @@
+name: synthetic_notifier
+description: "Test tool for Fils: posts fixed SYNTHETIC bank-style notifications from an allowed (non-messaging) app."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.14.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_local_notifications: ^23.0.3
+  material_ui: ^1.11.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/messages.json

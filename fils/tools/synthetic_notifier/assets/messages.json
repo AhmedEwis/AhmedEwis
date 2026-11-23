@@ -1,0 +1,9 @@
+{
+  "_comment": "SYNTHETIC bank-style notifications for Fils device testing. Not real bank messages. Read by the notifier app and by fils/mobile/test/core/synthetic_notifier_catalog_test.dart.",
+  "channel": "Synthetic bank alerts",
+  "messages": [
+    {"id": "S1", "title": "NBK", "body": "[SYNTHETIC] Purchase of KWD 5.250 at TALABAT card ending 1234. Available balance KWD 994.750", "expect": {"amount_minor": 5250, "category": "food", "balance_minor": 994750}},
+    {"id": "S2", "title": "NBK", "body": "[SYNTHETIC] Purchase of KWD 2.000 at TALABAT card ending 1234. Available balance KWD 992.750", "expect": {"amount_minor": 2000, "category": "food", "balance_minor": 992750}},
+    {"id": "S3", "title": "NBK", "body": "[SYNTHETIC] Purchase of KWD 3.000 at TALABAT card ending 1234. Available balance KWD 989.750", "expect": {"amount_minor": 3000, "category": "food", "balance_minor": 989750}}
+  ]
+}

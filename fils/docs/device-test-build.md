@@ -22,9 +22,16 @@
 | iOS: signed / uploaded / installable | **no**: blocked on the 4 signing secrets ([release-and-signing.md](release-and-signing.md)) |
 | Android: installable | **yes**: sideload the APK; `apksigner` verifies it |
 
+## Test tool: Fils Synthetic Notifier (Android)
+
+This is a separate app, not part of Fils, and it isn't distributed. It posts fixed `[SYNTHETIC]` bank-style notifications, so notification capture can be tested reproducibly without a bank and without messaging apps (which the listener blocks).
+- Source: `fils/tools/synthetic_notifier`. The texts are in `assets/messages.json`.
+- Package: `kw.fils.testtools.synthetic_notifier`. Debug-signed.
+- Build: `cd fils/tools/synthetic_notifier && flutter build apk --release --target-platform android-arm64`.
+
 ## Install
 
-- **Android:** copy the APK to the phone, open it, allow installing from that app, then install. A future store build can't update it in place (different key): uninstall it first.
+- **Android:** copy the APK to the phone, open it, allow installing from that app, then install. A future store build can't update it in place (different key): uninstall it first. For Part 2a, install the Synthetic Notifier APK the same way.
 - **iPhone:** once the secrets exist, go to Actions → `ios-testflight` → Run workflow (upload on). After Apple's processing, add yourself as an internal tester in TestFlight and install. On the first build, App Store Connect asks you an export-compliance question.
 
 ## Acceptance

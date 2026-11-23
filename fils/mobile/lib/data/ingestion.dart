@@ -194,8 +194,16 @@ class IngestionService {
     // identity: no id at all (paste/manual), or Shortcuts (a new run id every time).
     // Identical text alone never decides: the sender must match and the accounts must
     // be compatible. A repeat is held, never dropped and never counted twice.
-    if (e.sourceId == null || e.source == SourceKind.shortcut) {
-      final window = e.sourceId == null ? const Duration(minutes: 3) : const Duration(hours: 24);
+    // Notifications: the key identifies one posted notification, but an app can re-post
+    // identical content under a new key, and the listener's own 10-minute filter is in
+    // memory, so it's lost when Android restarts the Fils process. Same app, same
+    // sender, identical text within 10 minutes is therefore a repeat too.
+    if (e.sourceId == null || e.source == SourceKind.shortcut || e.source == SourceKind.notification) {
+      final window = e.sourceId == null
+          ? const Duration(minutes: 3)
+          : e.source == SourceKind.notification
+              ? const Duration(minutes: 10)
+              : const Duration(hours: 24);
       final priors = await (db.select(db.sourceEvents)
             ..where((s) =>
                 s.id.isNotValue(eventId) &
@@ -203,6 +211,9 @@ class IngestionService {
                 s.textHash.equals(hash) &
                 s.status.isNotIn(const ['processing', 'ignored']) &
                 (e.sender == null ? s.sender.isNull() : s.sender.equals(e.sender!)) &
+                (e.source != SourceKind.notification
+                    ? const Constant(true)
+                    : (e.packageName == null ? s.packageName.isNull() : s.packageName.equals(e.packageName!))) &
                 s.receivedAt.isBiggerOrEqualValue(e.receivedAt.toUtc().subtract(window)) &
                 s.receivedAt.isSmallerOrEqualValue(e.receivedAt.toUtc().add(window))))
           .get();

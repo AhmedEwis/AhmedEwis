@@ -48,7 +48,7 @@ Until this phase passes, a bank remains "synthetic-tested only".
 
 ## Part 2: Android (test APK, available now)
 
-Install `fils-<version>-device-test-arm64.apk` (see [device-test-build.md](device-test-build.md)). Use the same `[SYNTHETIC]` message as Part 1.
+Install `fils-<version>-device-test-arm64.apk` (see [device-test-build.md](device-test-build.md)). Use the same `[SYNTHETIC]` message as Part 1 for paste.
 
 | # | Step | Expected |
 |---|---|---|
@@ -56,10 +56,43 @@ Install `fils-<version>-device-test-arm64.apk` (see [device-test-build.md](devic
 | N2 | **Continue without an account**, then add the account as in A3 | **KWD 1,000.000** |
 | N3 | Capture → **Paste**, paste the synthetic message, then save | Same values as A6: **5.250**, **Food & Dining**, **Test NBK card**, balance **994.750** |
 | N4 | Paste the identical text again within 3 minutes | Held under **Review → Possible duplicates**. The balance is still **994.750**. **Same transaction** keeps it there |
-| N5 | Capture → Notification access → allow Fils, then **Choose apps** → select the SMS app on this phone (synthetic stand-in for a bank app) | Capture shows access granted and 1 app monitored |
-| N6 | Fils closed (swiped away): send the 2.000 synthetic text to this phone | After opening Fils, one 2.000 transaction appears. If the system delayed it, Home → Auto-capture shows it queued until then |
-| N7 | Reboot, don't open Fils, then send a third synthetic text (amount `3.000`) | It's captured after reboot (listener rebinds) and appears when you open Fils; never twice |
-| N8 | In Android Settings, revoke Fils' notification access, then open Fils → Capture | Capture shows access **missing**; nothing is captured until it's re-granted |
+
+### Part 2a: synthetic notification capture (reproducible; no bank involved)
+
+Fils captures notifications only from apps you pick. **Messaging apps are deliberately blocked**: Google Messages, Samsung Messages, AOSP Messaging/MMS, WhatsApp and Telegram never appear in the picker, and the listener ignores them even if set. So SMS notifications can't be used for this test.
+
+Instead, use the test tool **Fils Synthetic Notifier** (`fils-synthetic-notifier-<commit>.apk`, source in `fils/tools/synthetic_notifier`). It's an ordinary app (`kw.fils.testtools.synthetic_notifier`) that posts three fixed, `[SYNTHETIC]`-labeled bank-style notifications, titled `NBK`:
+
+| ID | Notification text (after the title `NBK`) |
+|---|---|
+| S1 | `[SYNTHETIC] Purchase of KWD 5.250 at TALABAT card ending 1234. Available balance KWD 994.750` |
+| S2 | `[SYNTHETIC] Purchase of KWD 2.000 at TALABAT card ending 1234. Available balance KWD 992.750` |
+| S3 | `[SYNTHETIC] Purchase of KWD 3.000 at TALABAT card ending 1234. Available balance KWD 989.750` |
+
+The texts come from `tools/synthetic_notifier/assets/messages.json`. The expected values below are checked on the host by `test/core/synthetic_notifier_catalog_test.dart`, which feeds those exact payloads through the listener's input path.
+
+| # | Step | Expected |
+|---|---|---|
+| N5 | Install the notifier APK, open it once and allow notifications. In Fils: Capture → Notification access → allow Fils. Then **Choose apps** → select **Fils Synthetic Notifier** | Capture shows access granted and 1 app monitored. Google Messages, Samsung Messages, WhatsApp and Telegram are **not** in the list |
+| N6 | Swipe Fils away (closed). In the notifier, tap **S2 → Post in 20 s**, then lock the phone | The notifier's notification appears. Open Fils: exactly **one 2.000** transaction (Food & Dining, Test NBK card) and balance **992.750**. If the system delayed processing, Home → Auto-capture shows it queued until then |
+| N6b | Within 10 minutes, tap **S2 → Post now** again (same text, new notification) | Never a second counted 2.000. Either the listener drops the re-post (the Fils process kept running), or, if Android restarted Fils in between, it's **held** under Review → Possible duplicates with the balance still **992.750**. Choose **Same transaction** |
+| N7 | Reboot. **Don't open Fils.** Open the notifier and tap **S3 → Post now**. Then open Fils | Captured after the reboot (the listener rebinds): exactly **one 3.000**, balance **989.750** |
+| N8 | Android Settings → revoke Fils' notification access. Tap **S1 → Post now** in the notifier. Open Fils → Capture | Capture shows access **missing**; nothing new is recorded. Re-grant access afterwards |
+
+A Part 2a pass proves the Android capture **mechanism**: listener, app filter, background processing, reboot and revocation. It says **nothing** about any bank's real notification format.
+
+### Part 2b: real bank-app notifications (separate; per bank)
+
+Run this only after Part 2a passes, one bank at a time. Real messages are personal data: **sanitize before sharing anything** ([bank-samples.md](bank-samples.md)).
+
+| # | Step | Expected |
+|---|---|---|
+| R1 | Install the bank's official app and enable its transaction notifications. In Fils → Choose apps, select **that bank app** | Listed and selected |
+| R2 | Make a small real card purchase | One transaction with the **amount, merchant, account and balance as shown in the bank app**. If it lands in **Review → Messages we couldn't read**, record it: the bank's format isn't supported yet |
+| R3 | If the bank also sends an SMS for the same purchase, compare | Still one transaction (an SMS isn't captured on the `play` build; it's only visible to you) |
+| R4 | Check the lock-screen setting "hide sensitive content" | If the bank app's notifications are hidden or redacted, Fils receives no text and records nothing; note it |
+
+A bank moves from "synthetic-tested only" to "device-verified" only after R1–R4 pass and its sanitized samples are added as fixtures (`provenance: real-sanitized`).
 
 ## Results
 
@@ -79,7 +112,7 @@ Install `fils-<version>-device-test-arm64.apk` (see [device-test-build.md](devic
 | A9b | | | |
 | A10 | | | |
 
-### Android
+### Android: paste and synthetic notifications (Parts 2 and 2a)
 
 | Step | Pass/Fail | Android version / phone | Notes |
 |---|---|---|---|
@@ -89,8 +122,18 @@ Install `fils-<version>-device-test-arm64.apk` (see [device-test-build.md](devic
 | N4 | | | |
 | N5 | | | |
 | N6 | | | |
+| N6b | | | |
 | N7 | | | |
 | N8 | | | |
+
+### Android: real bank apps (Part 2b, one table per bank)
+
+| Bank | Step | Pass/Fail | Notes (sanitized) |
+|---|---|---|---|
+| | R1 | | |
+| | R2 | | |
+| | R3 | | |
+| | R4 | | |
 
 ## What only a device can show
 
