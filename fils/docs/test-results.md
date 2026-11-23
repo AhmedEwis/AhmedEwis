@@ -30,7 +30,14 @@ Only checks that were actually run are listed.
 
 **Also fixed:** a pre-existing flaky assertion in `test/e2e/backend_sync_e2e_test.dart`. It used `expect(() => api.pull(null), throwsA(...))` without `await` and recorded consent immediately after, so it intermittently raced (1 failure in about 8 runs). It is now `await expectLater(...)`; 8 out of 8 isolated runs pass.
 
-**Full run:** `FILS_E2E_API=… flutter test test/core test/perf test/e2e` → **181 passed, 0 failed**, three consecutive runs. `flutter analyze` → 0 errors, 0 warnings.
+**Full run:** `FILS_E2E_API=… flutter test test/core test/perf test/e2e` → **181 passed, 0 failed**, three consecutive runs. `flutter analyze` → 0 errors, 0 warnings. The screenshot suite passed (4 variants).
+
+**CI at `0962a4d`:**
+- `mobile-ci` run `45165021345`: success.
+- `security` run `45165021289`: success.
+- `ios-testflight`, manually dispatched, run `45165045231`:
+  - `archive-unsigned`: success.
+  - `preflight` **failed by design**: *"Missing secrets: APPLE_TEAM_ID APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_PRIVATE_KEY. No signed build attempted."*
 
 ## 0b. Codex review, round 3: ambiguous settlement and conditional Dismiss
 
