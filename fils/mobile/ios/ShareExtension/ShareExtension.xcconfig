@@ -1,0 +1,5 @@
+// Gives the Share Extension Flutter's FLUTTER_BUILD_NAME / FLUTTER_BUILD_NUMBER, so its
+// CFBundleShortVersionString / CFBundleVersion match the app's. App Store Connect rejects
+// an extension without them. It deliberately doesn't include the Runner's CocoaPods
+// config: no Flutter or plugin code is linked into the extension.
+#include? "../Flutter/Generated.xcconfig"

@@ -75,6 +75,7 @@
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		3FD548DAF6A92B682FB02335 /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F52FAEF53D189B5CD742C3C /* ShareExtension.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = ShareExtension.xcconfig; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -137,6 +138,7 @@
 				CA42F8B875B28E1AB72B6B5C /* ShareViewController.swift */,
 				A34F619384E3C5746AFD75AB /* Info.plist */,
 				0F3FA754F10BC79C98469F46 /* ShareExtension.entitlements */,
+				4F52FAEF53D189B5CD742C3C /* ShareExtension.xcconfig */,
 			);
 			name = ShareExtension;
 			path = ShareExtension;
@@ -562,6 +564,7 @@
 		};
 		3A5CEE93B64040A3825C9E03 /* Profile */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 4F52FAEF53D189B5CD742C3C /* ShareExtension.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_WEAK = NO;
@@ -742,6 +745,7 @@
 		};
 		BFB44B57A1B7D33951CDD86F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 4F52FAEF53D189B5CD742C3C /* ShareExtension.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_WEAK = NO;
@@ -764,6 +768,7 @@
 		};
 		F2639422B9E9CD4182F070FC /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 4F52FAEF53D189B5CD742C3C /* ShareExtension.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_OBJC_WEAK = NO;

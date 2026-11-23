@@ -61,5 +61,10 @@ unless ext
   idx = phases.index { |p| p.is_a?(Xcodeproj::Project::Object::PBXShellScriptBuildPhase) } || phases.length
   phases.insert(idx, embed)
 end
+# The extension needs Flutter's build name/number (versions must match the app's).
+# Idempotent: applied to existing projects too.
+ext_group = project.main_group['ShareExtension']
+xc_ref = ext_group.files.find { |f| f.path == 'ShareExtension.xcconfig' } || ext_group.new_file('ShareExtension.xcconfig')
+ext.build_configurations.each { |c| c.base_configuration_reference = xc_ref }
 project.save
 puts "ShareExtension target present: #{project.targets.map(&:name).inspect}"
