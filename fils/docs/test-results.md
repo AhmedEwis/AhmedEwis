@@ -30,6 +30,15 @@ The household v1→v2 and v2→v3 migration tests now expect the current version
 
 **Perf note:** one full run that included `test/perf` in parallel with everything else exceeded the 20 s insert budget (20.5 s). The same perf test on the original code (`0be447d`) measures 14.8–18.1 s on this container today, the same as now, so there is no regression. The budget wasn't loosened; perf is run on its own.
 
+**CI at `4df39fb`:**
+- `mobile-ci` run `45178938494`: success.
+- `security` run `45178938558`: success.
+- `ios-testflight` run `45178938540`:
+  - `archive-unsigned`: success (version 0.3.0, extension embedded, versions match, privacy manifests bundled).
+  - preflight: *"Missing secrets: APPLE_TEAM_ID APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_PRIVATE_KEY."*
+
+**Android device-test APK:** 0.3.0, versionCode 2003, `FILS_ENV=staging`, no API URL. `apksigner` verifies it (debug keystore, `CN=Android Debug`). `aapt2` shows no SMS permission.
+
 ## 0c. Codex review, round 4: held-group identity and the settlement predicate
 
 **Reproduction on `5b7d6fc`:** `test/core/held_identity_test.dart` was written and run before the fix. **8 tests failed:**
