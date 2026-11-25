@@ -921,6 +921,45 @@
         }
       }
     },
+    "/v1/assistant/plan": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Assistant Plan",
+        "operationId": "assistant_plan_v1_assistant_plan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/voice/config": {
       "get": {
         "tags": [
@@ -1814,6 +1853,193 @@
           "role"
         ],
         "title": "Msg"
+      },
+      "PlanActionRef": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^cut:[a-z_*]{1,32}$",
+            "title": "Id"
+          },
+          "category": {
+            "type": "string",
+            "pattern": "^([a-z_]{1,32}|\\*)$",
+            "title": "Category"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "category"
+        ],
+        "title": "PlanActionRef"
+      },
+      "PlanFact": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z_]{1,24}(:[a-z_*]{1,32})?$",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 80,
+            "title": "Label"
+          },
+          "amount": {
+            "type": "string",
+            "maxLength": 24,
+            "pattern": "^-?[0-9][0-9,]*(\\.[0-9]{1,3})? [A-Z]{3}$",
+            "title": "Amount"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "confirmed",
+              "assumption"
+            ],
+            "title": "Source"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "amount",
+          "source"
+        ],
+        "title": "PlanFact"
+      },
+      "PlanIn": {
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": [
+              "understand",
+              "explain"
+            ],
+            "title": "Stage"
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "ar",
+              "en"
+            ],
+            "title": "Locale",
+            "default": "ar"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 600
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "categories": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 40,
+            "title": "Categories"
+          },
+          "today": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Today"
+          },
+          "cycle_start_day": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 31.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cycle Start Day"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "needs_input",
+                  "on_track",
+                  "feasible",
+                  "infeasible"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/PlanFact"
+            },
+            "type": "array",
+            "maxItems": 40,
+            "title": "Facts"
+          },
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/PlanActionRef"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "title": "Actions"
+          },
+          "limitations": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "short_history",
+                "no_history",
+                "irregular_income",
+                "other_currencies",
+                "accounts_without_activity",
+                "protected_without_spending",
+                "pending_included"
+              ]
+            },
+            "type": "array",
+            "maxItems": 8,
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "stage",
+          "conversation_id"
+        ],
+        "title": "PlanIn"
       },
       "PushIn": {
         "properties": {

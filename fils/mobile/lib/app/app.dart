@@ -21,6 +21,7 @@ import '../features/onboarding/onboarding_screen.dart';
 import '../features/plans/plans_screen.dart';
 import '../features/review/review_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../features/smart_plan/smart_plan_screen.dart';
 import '../features/transactions/transaction_detail_screen.dart';
 import '../features/transactions/transactions_screen.dart';
 import '../features/voice/voice_screen.dart';
@@ -57,6 +58,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/transactions', builder: (_, __) => const TransactionsScreen()),
       GoRoute(path: '/transactions/:id', builder: (_, s) => TransactionDetailScreen(id: s.pathParameters['id']!)),
       GoRoute(path: '/review', builder: (_, __) => const ReviewScreen()),
+      GoRoute(path: '/smart-plan', builder: (_, st) => SmartPlanScreen(initialText: st.uri.queryParameters['q'])),
       GoRoute(path: '/accounts', builder: (_, __) => const AccountsScreen()),
       GoRoute(path: '/accounts/new', builder: (_, __) => const AccountFormScreen()),
       GoRoute(path: '/accounts/:id', builder: (_, s) => AccountDetailScreen(id: s.pathParameters['id']!)),

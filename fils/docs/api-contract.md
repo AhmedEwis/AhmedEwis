@@ -173,6 +173,21 @@ deterministic tools and sends back only their results (aggregates). The server e
 `cloud_ai` consent, per-user rate limits and a monthly token budget, which are configurable
 (`429 quota_exceeded`).
 
+### My Smart Plan (understanding and explanations only)
+
+`POST /v1/assistant/plan`. The request model **forbids extra fields**.
+
+- **`stage: "understand"`:** `{conversation_id, locale, text (≤600), categories: [id], today, cycle_start_day}`.
+  - Returns `{status: "ok", intent: {target_minor?, target_evidence?, currency?, deadline?, months?, protected_categories[], income_minor?, income_evidence?, commitments[{category_id, amount_minor, evidence}]}}`, or `{status: "invalid_output"}`.
+- **`stage: "explain"`:** `{conversation_id, locale, status, facts: [{id, label (≤80), amount ("NNN.NNN KWD"), source}], actions: [{id: "cut:<category>", category}], limitations: [code]}`.
+  - Returns `{status: "ok", explanation: {summary, actions: [{id, why}]}}`, or `{status: "invalid_output"}`.
+
+How it's enforced:
+- The tool schemas are defined on the server, and the model is forced to call `record_goal` or `explain_plan`. Arguments are validated, and explanations may cite numbers only as `{fact:ID}`.
+- The device re-validates everything: each amount must appear in the user's own words, and every displayed amount comes from facts the device computed.
+- Same consent, rate-limit group and monthly budget as `/assistant/turn`.
+- Errors: `403 consent_required`, `503 provider_not_configured`, `429 quota_exceeded`, `422` for extra or invalid fields.
+
 ## Voice
 
 - `POST /v1/voice/token` returns `{provider: "azure", region, token, expires_at}`: a short-lived

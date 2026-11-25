@@ -568,6 +568,12 @@ class FinanceStore {
     await _enqueue(Entities.goal, goalId);
   }
 
+  /// Soft-deletes a goal (used only to undo a goal that a smart plan created).
+  Future<void> deleteGoal(String id) async {
+    await (db.update(db.goals)..where((g) => g.id.equals(id))).write(GoalsCompanion(deletedAt: Value(now), updatedAt: Value(now)));
+    await _enqueue(Entities.goal, id);
+  }
+
   Future<void> archiveGoal(String id) async {
     await (db.update(db.goals)..where((g) => g.id.equals(id))).write(GoalsCompanion(archived: const Value(true), updatedAt: Value(now)));
     await _enqueue(Entities.goal, id);
@@ -642,7 +648,7 @@ class FinanceStore {
   Future<void> wipeAll() async {
     await db.transaction(() async {
       // Children before parents (foreign keys are enforced), then everything else.
-      final ordered = <TableInfo>[db.transactionSplits, db.goalContributions, db.transactions, db.goals, db.accounts];
+      final ordered = <TableInfo>[db.smartPlanChanges, db.smartPlans, db.transactionSplits, db.goalContributions, db.transactions, db.goals, db.accounts];
       for (final t in ordered) {
         await db.delete(t).go();
       }

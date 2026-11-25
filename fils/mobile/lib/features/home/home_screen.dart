@@ -8,6 +8,7 @@ import '../../core/time/kuwait_time.dart';
 import '../../data/db/database.dart';
 import '../../data/store.dart';
 import '../../l10n/strings.dart';
+import '../smart_plan/smart_plan_screen.dart';
 import '../../app/services.dart';
 import '../../ui/theme/theme.dart';
 import '../../ui/theme/tokens.dart';
@@ -334,6 +335,8 @@ class _StatusCards extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(FilsSpace.gutter, 0, FilsSpace.gutter, 0),
       child: Column(children: [
+        SmartPlanHomeCard(onTap: () => context.push('/smart-plan')),
+        const SizedBox(height: 10),
         FCard(
           onTap: () => context.push('/capture'),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

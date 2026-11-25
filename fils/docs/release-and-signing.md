@@ -64,6 +64,13 @@ Then run [device-acceptance.md](device-acceptance.md).
 
 **Alternative without CI:** on a Mac with Xcode 16+, open `ios/Runner.xcworkspace`, select your Team for the Runner and ShareExtension targets, connect the iPhone and Run. A free Apple ID can install a 7-day development build, but free provisioning doesn't support App Groups, so Shortcut-to-app capture won't work. A paid membership is needed for the real acceptance test.
 
+## Google Play Internal testing (release-signed AAB)
+
+[`.github/workflows/android-internal.yml`](../../.github/workflows/android-internal.yml) builds a **release-signed, Play-flavor** App Bundle (`FILS_ENV=staging`, no API URL, so fully local; cloud features show "not configured"). It checks the bundle's manifest with `bundletool` (no `READ_SMS`/`RECEIVE_SMS`/`SEND_SMS`/`RECEIVE_MMS`/`READ_CALL_LOG`) and verifies the signature with `jarsigner`. The bundle is kept as a workflow artifact. **It doesn't upload to Play or publish anything.**
+- **Prerequisite:** the upload keystore as GitHub secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Create the keystore locally once, as described above.
+- **Then:** Actions → `android-internal` → Run workflow. Download the artifact and upload it in Play Console → Testing → Internal testing. Enroll in Play App Signing on first upload.
+- On each push that touches Android files, the workflow builds an **unsigned** bundle to check the release configuration and reports any missing secrets.
+
 ## Test APK provided with this handoff
 
 | Field | Value |

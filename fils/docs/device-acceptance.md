@@ -94,6 +94,22 @@ Run this only after Part 2a passes, one bank at a time. Real messages are person
 
 A bank moves from "synthetic-tested only" to "device-verified" only after R1–R4 pass and its sanitized samples are added as fixtures (`provenance: real-sanitized`).
 
+## Part 3: My Smart Plan (local core; iPhone or Android)
+
+No server or AI is needed. The device-test builds label the planner **"Basic local planner"**; live AI is cloud acceptance C8. Use **Explore with demo data** (synthetic, labelled) or your own captured history.
+
+| # | Step | Expected |
+|---|---|---|
+| SP1 | Home → **خطتي الذكية / My Smart Plan** | The plan screen opens. Demo mode shows three chips labelled "Demo scenarios (synthetic data)" |
+| SP2 | Type or say (mic): *"عايز أوفر 150 دينار الشهر ده، بس ما تقللش الجيم ولا مصاريف البيت."* → **Make my plan** | "What I understood": **KWD 150.000**, **this cycle**, and protected **Fitness & Gym, Rent & Housing, Bills, Groceries**, with an *Assumption* note for "مصاريف البيت". The pill says **Basic local planner** with a reason, never "Live AI" |
+| SP3 | Read the summary | Bars for *Savings if nothing changes* vs *Savings with the plan* vs the goal, each with a source pill (**Observed / You said / Assumption**). No protected category appears as an action. At most 3 actions |
+| SP4 | Tap **Why this suggestion?** on an action, then step its limit up and down | Supporting facts with their sources. Totals recalculate at once. The limit can't go below what's already spent. The card shows "Your edit" |
+| SP5 | **Preview changes** | A list of budget changes (before → after) and the optional goal. Nothing is written yet: Plans → Budgets is unchanged |
+| SP6 | **Confirm and apply**, then tap Confirm again quickly or go back and repeat | One applied plan. Plans → Budgets shows exactly the selected limits. Transactions and balances are unchanged |
+| SP7 | Force-close the app, reopen → Smart Plan | The progress card shows spent vs each limit and the % of the cycle. **Undo plan** restores the previous budgets once; repeating does nothing |
+| SP8 | Try *"ابي اوفر 900 دينار هالشهر"* | Clearly marked as more than this cycle allows, with computed alternatives (smaller goal, more months, relax a protection). No invented savings |
+| SP9 | Bookmark icon → memory | Lists only protections you asked it to remember, with remove and **Reset everything**. It states that preferences stay on the phone and aren't used to train AI |
+
 ## Results
 
 ### iPhone
@@ -134,6 +150,20 @@ A bank moves from "synthetic-tested only" to "device-verified" only after R1–R
 | | R2 | | |
 | | R3 | | |
 | | R4 | | |
+
+### My Smart Plan (Part 3)
+
+| Step | Pass/Fail | Device / OS | Notes |
+|---|---|---|---|
+| SP1 | | | |
+| SP2 | | | |
+| SP3 | | | |
+| SP4 | | | |
+| SP5 | | | |
+| SP6 | | | |
+| SP7 | | | |
+| SP8 | | | |
+| SP9 | | | |
 
 ## What only a device can show
 

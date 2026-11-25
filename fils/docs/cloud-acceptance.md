@@ -25,6 +25,7 @@ These features talk to the Fils backend or a third-party service. They aren't pa
 | C4 | Cloud AI assistant | Consent, ask a spending question | Answers quote only numbers computed on the device. Without consent, nothing is sent |
 | C5 | Azure neural voice | Consent, play a spoken answer | Neural voice plays. On any failure it falls back to device TTS |
 | C6 | Subscriptions | Sandbox purchase, restore, expiry | Server-verified entitlement. No local unlock in a production build |
+| C8 | My Smart Plan with live AI | Consent, then say the goal in Egyptian Arabic, Kuwaiti Arabic and English; ask for an explanation | The pill says **Live AI** only when the model was used. Amounts are identical to the local planner's for the same request. Any model text containing its own numbers is rejected and replaced by the local explanation. Nothing but category-level aggregates leaves the phone (`docs/smart-plan.md`) |
 | C7 | Account deletion | Delete the account from the app | Server data removed; local wipe; sign-in no longer works |
 
 ## Results
@@ -38,3 +39,4 @@ These features talk to the Fils backend or a third-party service. They aren't pa
 | C5 | | | |
 | C6 | | | |
 | C7 | | | |
+| C8 | | | |

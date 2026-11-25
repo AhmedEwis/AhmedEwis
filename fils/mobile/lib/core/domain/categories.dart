@@ -28,6 +28,7 @@ class Cat {
   static const charity = 'charity';
   static const family = 'family';
   static const personalCare = 'personal_care';
+  static const fitness = 'fitness';
   static const cash = 'cash';
   static const other = 'other';
   static const transfers = 'transfers';
@@ -54,6 +55,7 @@ const systemCategories = <CategoryDef>[
   CategoryDef(Cat.charity, 'Charity & Zakat', 'صدقة وزكاة', '🤲', 0xFF059669),
   CategoryDef(Cat.family, 'Family', 'العائلة', '👨‍👩‍👧', 0xFFF97316),
   CategoryDef(Cat.personalCare, 'Personal Care', 'عناية شخصية', '💈', 0xFFA855F7),
+  CategoryDef(Cat.fitness, 'Fitness & Gym', 'رياضة وجيم', '🏋️', 0xFF0F766E),
   CategoryDef(Cat.cash, 'Cash', 'كاش', '💵', 0xFF84CC16),
   CategoryDef(Cat.transfers, 'Transfers to others', 'تحويلات لآخرين', '↗️', 0xFF0891B2),
   CategoryDef(Cat.other, 'Other', 'أخرى', '📦', 0xFF94A3B8),

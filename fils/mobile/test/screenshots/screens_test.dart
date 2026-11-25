@@ -14,7 +14,7 @@ import 'package:fils/data/ingestion.dart';
 import 'package:fils/data/store.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:material_ui/material_ui.dart' show SizedBox;
+import 'package:material_ui/material_ui.dart' show SizedBox, ListView, Offset;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -56,6 +56,9 @@ void main() {
     ('capture', '/capture'),
     ('settings', '/settings'),
     ('accounts', '/accounts'),
+    ('smart_plan', '/smart-plan?q=${Uri.encodeComponent('عايز أوفر 150 دينار الشهر ده، بس ما تقللش الجيم ولا مصاريف البيت.')}'),
+    // Same protections, a goal that needs changes; captured after scrolling to the actions.
+    ('smart_plan_actions', '/smart-plan?q=${Uri.encodeComponent('عايز أوفر 900 دينار الشهر ده، بس ما تقللش الجيم ولا مصاريف البيت.')}'),
   ];
 
   for (final locale in ['en', 'ar']) {
@@ -99,6 +102,10 @@ void main() {
         for (final (name, route) in screens.where((e) => only == null || only.contains(e.$1))) {
           container.read(routerProvider).go(route);
           await settle();
+          if (name == 'smart_plan_actions') {
+            await tester.drag(find.byType(ListView).last, const Offset(0, -1150));
+            await settle();
+          }
           mark('settled $name');
           await expectLater(find.byType(FilsApp), matchesGoldenFile('goldens/${name}_${locale}_$theme.png'));
           mark('golden $name');

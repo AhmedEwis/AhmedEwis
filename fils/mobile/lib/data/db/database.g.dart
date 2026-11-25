@@ -3872,10 +3872,10 @@ class SourceEventRow extends DataClass implements Insertable<SourceEventRow> {
   /// v3: the other account named by a transfer message (last 4), kept as linking evidence.
   final String? counterLast4;
 
-  /// v3: for a held possible duplicate, the candidate transaction ids (comma-separated).
+  /// v4: for a held possible duplicate, the candidate transaction ids (comma-separated).
   final String? matchCandidates;
 
-  /// v3: explicit group of held captures that are the same message delivered through
+  /// v4: explicit group of held captures that are the same message delivered through
   /// several channels on the same verified account (root event id). Resolution only
   /// ever touches members of this group.
   final String? heldGroup;
@@ -11724,6 +11724,1221 @@ class SharedRecordsCompanion extends UpdateCompanion<SharedRow> {
   }
 }
 
+class $SmartPlansTable extends SmartPlans
+    with TableInfo<$SmartPlansTable, SmartPlanRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SmartPlansTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _proposalJsonMeta = const VerificationMeta(
+    'proposalJson',
+  );
+  @override
+  late final GeneratedColumn<String> proposalJson = GeneratedColumn<String>(
+    'proposal_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _explanationJsonMeta = const VerificationMeta(
+    'explanationJson',
+  );
+  @override
+  late final GeneratedColumn<String> explanationJson = GeneratedColumn<String>(
+    'explanation_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _understoodByMeta = const VerificationMeta(
+    'understoodBy',
+  );
+  @override
+  late final GeneratedColumn<String> understoodBy = GeneratedColumn<String>(
+    'understood_by',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _currencyMeta = const VerificationMeta(
+    'currency',
+  );
+  @override
+  late final GeneratedColumn<String> currency = GeneratedColumn<String>(
+    'currency',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _periodStartMeta = const VerificationMeta(
+    'periodStart',
+  );
+  @override
+  late final GeneratedColumn<DateTime> periodStart = GeneratedColumn<DateTime>(
+    'period_start',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _periodEndMeta = const VerificationMeta(
+    'periodEnd',
+  );
+  @override
+  late final GeneratedColumn<DateTime> periodEnd = GeneratedColumn<DateTime>(
+    'period_end',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _appliedAtMeta = const VerificationMeta(
+    'appliedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> appliedAt = GeneratedColumn<DateTime>(
+    'applied_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _undoneAtMeta = const VerificationMeta(
+    'undoneAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> undoneAt = GeneratedColumn<DateTime>(
+    'undone_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _supersededByMeta = const VerificationMeta(
+    'supersededBy',
+  );
+  @override
+  late final GeneratedColumn<String> supersededBy = GeneratedColumn<String>(
+    'superseded_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    status,
+    proposalJson,
+    explanationJson,
+    understoodBy,
+    currency,
+    periodStart,
+    periodEnd,
+    appliedAt,
+    undoneAt,
+    supersededBy,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'smart_plans';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SmartPlanRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('proposal_json')) {
+      context.handle(
+        _proposalJsonMeta,
+        proposalJson.isAcceptableOrUnknown(
+          data['proposal_json']!,
+          _proposalJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_proposalJsonMeta);
+    }
+    if (data.containsKey('explanation_json')) {
+      context.handle(
+        _explanationJsonMeta,
+        explanationJson.isAcceptableOrUnknown(
+          data['explanation_json']!,
+          _explanationJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('understood_by')) {
+      context.handle(
+        _understoodByMeta,
+        understoodBy.isAcceptableOrUnknown(
+          data['understood_by']!,
+          _understoodByMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_understoodByMeta);
+    }
+    if (data.containsKey('currency')) {
+      context.handle(
+        _currencyMeta,
+        currency.isAcceptableOrUnknown(data['currency']!, _currencyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_currencyMeta);
+    }
+    if (data.containsKey('period_start')) {
+      context.handle(
+        _periodStartMeta,
+        periodStart.isAcceptableOrUnknown(
+          data['period_start']!,
+          _periodStartMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_periodStartMeta);
+    }
+    if (data.containsKey('period_end')) {
+      context.handle(
+        _periodEndMeta,
+        periodEnd.isAcceptableOrUnknown(data['period_end']!, _periodEndMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_periodEndMeta);
+    }
+    if (data.containsKey('applied_at')) {
+      context.handle(
+        _appliedAtMeta,
+        appliedAt.isAcceptableOrUnknown(data['applied_at']!, _appliedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_appliedAtMeta);
+    }
+    if (data.containsKey('undone_at')) {
+      context.handle(
+        _undoneAtMeta,
+        undoneAt.isAcceptableOrUnknown(data['undone_at']!, _undoneAtMeta),
+      );
+    }
+    if (data.containsKey('superseded_by')) {
+      context.handle(
+        _supersededByMeta,
+        supersededBy.isAcceptableOrUnknown(
+          data['superseded_by']!,
+          _supersededByMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SmartPlanRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SmartPlanRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      proposalJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}proposal_json'],
+      )!,
+      explanationJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}explanation_json'],
+      ),
+      understoodBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}understood_by'],
+      )!,
+      currency: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency'],
+      )!,
+      periodStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}period_start'],
+      )!,
+      periodEnd: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}period_end'],
+      )!,
+      appliedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}applied_at'],
+      )!,
+      undoneAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}undone_at'],
+      ),
+      supersededBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}superseded_by'],
+      ),
+    );
+  }
+
+  @override
+  $SmartPlansTable createAlias(String alias) {
+    return $SmartPlansTable(attachedDatabase, alias);
+  }
+}
+
+class SmartPlanRow extends DataClass implements Insertable<SmartPlanRow> {
+  final String id;
+  final String status;
+  final String proposalJson;
+  final String? explanationJson;
+  final String understoodBy;
+  final String currency;
+  final DateTime periodStart;
+  final DateTime periodEnd;
+  final DateTime appliedAt;
+  final DateTime? undoneAt;
+  final String? supersededBy;
+  const SmartPlanRow({
+    required this.id,
+    required this.status,
+    required this.proposalJson,
+    this.explanationJson,
+    required this.understoodBy,
+    required this.currency,
+    required this.periodStart,
+    required this.periodEnd,
+    required this.appliedAt,
+    this.undoneAt,
+    this.supersededBy,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['status'] = Variable<String>(status);
+    map['proposal_json'] = Variable<String>(proposalJson);
+    if (!nullToAbsent || explanationJson != null) {
+      map['explanation_json'] = Variable<String>(explanationJson);
+    }
+    map['understood_by'] = Variable<String>(understoodBy);
+    map['currency'] = Variable<String>(currency);
+    map['period_start'] = Variable<DateTime>(periodStart);
+    map['period_end'] = Variable<DateTime>(periodEnd);
+    map['applied_at'] = Variable<DateTime>(appliedAt);
+    if (!nullToAbsent || undoneAt != null) {
+      map['undone_at'] = Variable<DateTime>(undoneAt);
+    }
+    if (!nullToAbsent || supersededBy != null) {
+      map['superseded_by'] = Variable<String>(supersededBy);
+    }
+    return map;
+  }
+
+  SmartPlansCompanion toCompanion(bool nullToAbsent) {
+    return SmartPlansCompanion(
+      id: Value(id),
+      status: Value(status),
+      proposalJson: Value(proposalJson),
+      explanationJson: explanationJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(explanationJson),
+      understoodBy: Value(understoodBy),
+      currency: Value(currency),
+      periodStart: Value(periodStart),
+      periodEnd: Value(periodEnd),
+      appliedAt: Value(appliedAt),
+      undoneAt: undoneAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(undoneAt),
+      supersededBy: supersededBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(supersededBy),
+    );
+  }
+
+  factory SmartPlanRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SmartPlanRow(
+      id: serializer.fromJson<String>(json['id']),
+      status: serializer.fromJson<String>(json['status']),
+      proposalJson: serializer.fromJson<String>(json['proposalJson']),
+      explanationJson: serializer.fromJson<String?>(json['explanationJson']),
+      understoodBy: serializer.fromJson<String>(json['understoodBy']),
+      currency: serializer.fromJson<String>(json['currency']),
+      periodStart: serializer.fromJson<DateTime>(json['periodStart']),
+      periodEnd: serializer.fromJson<DateTime>(json['periodEnd']),
+      appliedAt: serializer.fromJson<DateTime>(json['appliedAt']),
+      undoneAt: serializer.fromJson<DateTime?>(json['undoneAt']),
+      supersededBy: serializer.fromJson<String?>(json['supersededBy']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'status': serializer.toJson<String>(status),
+      'proposalJson': serializer.toJson<String>(proposalJson),
+      'explanationJson': serializer.toJson<String?>(explanationJson),
+      'understoodBy': serializer.toJson<String>(understoodBy),
+      'currency': serializer.toJson<String>(currency),
+      'periodStart': serializer.toJson<DateTime>(periodStart),
+      'periodEnd': serializer.toJson<DateTime>(periodEnd),
+      'appliedAt': serializer.toJson<DateTime>(appliedAt),
+      'undoneAt': serializer.toJson<DateTime?>(undoneAt),
+      'supersededBy': serializer.toJson<String?>(supersededBy),
+    };
+  }
+
+  SmartPlanRow copyWith({
+    String? id,
+    String? status,
+    String? proposalJson,
+    Value<String?> explanationJson = const Value.absent(),
+    String? understoodBy,
+    String? currency,
+    DateTime? periodStart,
+    DateTime? periodEnd,
+    DateTime? appliedAt,
+    Value<DateTime?> undoneAt = const Value.absent(),
+    Value<String?> supersededBy = const Value.absent(),
+  }) => SmartPlanRow(
+    id: id ?? this.id,
+    status: status ?? this.status,
+    proposalJson: proposalJson ?? this.proposalJson,
+    explanationJson: explanationJson.present
+        ? explanationJson.value
+        : this.explanationJson,
+    understoodBy: understoodBy ?? this.understoodBy,
+    currency: currency ?? this.currency,
+    periodStart: periodStart ?? this.periodStart,
+    periodEnd: periodEnd ?? this.periodEnd,
+    appliedAt: appliedAt ?? this.appliedAt,
+    undoneAt: undoneAt.present ? undoneAt.value : this.undoneAt,
+    supersededBy: supersededBy.present ? supersededBy.value : this.supersededBy,
+  );
+  SmartPlanRow copyWithCompanion(SmartPlansCompanion data) {
+    return SmartPlanRow(
+      id: data.id.present ? data.id.value : this.id,
+      status: data.status.present ? data.status.value : this.status,
+      proposalJson: data.proposalJson.present
+          ? data.proposalJson.value
+          : this.proposalJson,
+      explanationJson: data.explanationJson.present
+          ? data.explanationJson.value
+          : this.explanationJson,
+      understoodBy: data.understoodBy.present
+          ? data.understoodBy.value
+          : this.understoodBy,
+      currency: data.currency.present ? data.currency.value : this.currency,
+      periodStart: data.periodStart.present
+          ? data.periodStart.value
+          : this.periodStart,
+      periodEnd: data.periodEnd.present ? data.periodEnd.value : this.periodEnd,
+      appliedAt: data.appliedAt.present ? data.appliedAt.value : this.appliedAt,
+      undoneAt: data.undoneAt.present ? data.undoneAt.value : this.undoneAt,
+      supersededBy: data.supersededBy.present
+          ? data.supersededBy.value
+          : this.supersededBy,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SmartPlanRow(')
+          ..write('id: $id, ')
+          ..write('status: $status, ')
+          ..write('proposalJson: $proposalJson, ')
+          ..write('explanationJson: $explanationJson, ')
+          ..write('understoodBy: $understoodBy, ')
+          ..write('currency: $currency, ')
+          ..write('periodStart: $periodStart, ')
+          ..write('periodEnd: $periodEnd, ')
+          ..write('appliedAt: $appliedAt, ')
+          ..write('undoneAt: $undoneAt, ')
+          ..write('supersededBy: $supersededBy')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    status,
+    proposalJson,
+    explanationJson,
+    understoodBy,
+    currency,
+    periodStart,
+    periodEnd,
+    appliedAt,
+    undoneAt,
+    supersededBy,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SmartPlanRow &&
+          other.id == this.id &&
+          other.status == this.status &&
+          other.proposalJson == this.proposalJson &&
+          other.explanationJson == this.explanationJson &&
+          other.understoodBy == this.understoodBy &&
+          other.currency == this.currency &&
+          other.periodStart == this.periodStart &&
+          other.periodEnd == this.periodEnd &&
+          other.appliedAt == this.appliedAt &&
+          other.undoneAt == this.undoneAt &&
+          other.supersededBy == this.supersededBy);
+}
+
+class SmartPlansCompanion extends UpdateCompanion<SmartPlanRow> {
+  final Value<String> id;
+  final Value<String> status;
+  final Value<String> proposalJson;
+  final Value<String?> explanationJson;
+  final Value<String> understoodBy;
+  final Value<String> currency;
+  final Value<DateTime> periodStart;
+  final Value<DateTime> periodEnd;
+  final Value<DateTime> appliedAt;
+  final Value<DateTime?> undoneAt;
+  final Value<String?> supersededBy;
+  final Value<int> rowid;
+  const SmartPlansCompanion({
+    this.id = const Value.absent(),
+    this.status = const Value.absent(),
+    this.proposalJson = const Value.absent(),
+    this.explanationJson = const Value.absent(),
+    this.understoodBy = const Value.absent(),
+    this.currency = const Value.absent(),
+    this.periodStart = const Value.absent(),
+    this.periodEnd = const Value.absent(),
+    this.appliedAt = const Value.absent(),
+    this.undoneAt = const Value.absent(),
+    this.supersededBy = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SmartPlansCompanion.insert({
+    required String id,
+    required String status,
+    required String proposalJson,
+    this.explanationJson = const Value.absent(),
+    required String understoodBy,
+    required String currency,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+    required DateTime appliedAt,
+    this.undoneAt = const Value.absent(),
+    this.supersededBy = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       status = Value(status),
+       proposalJson = Value(proposalJson),
+       understoodBy = Value(understoodBy),
+       currency = Value(currency),
+       periodStart = Value(periodStart),
+       periodEnd = Value(periodEnd),
+       appliedAt = Value(appliedAt);
+  static Insertable<SmartPlanRow> custom({
+    Expression<String>? id,
+    Expression<String>? status,
+    Expression<String>? proposalJson,
+    Expression<String>? explanationJson,
+    Expression<String>? understoodBy,
+    Expression<String>? currency,
+    Expression<DateTime>? periodStart,
+    Expression<DateTime>? periodEnd,
+    Expression<DateTime>? appliedAt,
+    Expression<DateTime>? undoneAt,
+    Expression<String>? supersededBy,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (status != null) 'status': status,
+      if (proposalJson != null) 'proposal_json': proposalJson,
+      if (explanationJson != null) 'explanation_json': explanationJson,
+      if (understoodBy != null) 'understood_by': understoodBy,
+      if (currency != null) 'currency': currency,
+      if (periodStart != null) 'period_start': periodStart,
+      if (periodEnd != null) 'period_end': periodEnd,
+      if (appliedAt != null) 'applied_at': appliedAt,
+      if (undoneAt != null) 'undone_at': undoneAt,
+      if (supersededBy != null) 'superseded_by': supersededBy,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SmartPlansCompanion copyWith({
+    Value<String>? id,
+    Value<String>? status,
+    Value<String>? proposalJson,
+    Value<String?>? explanationJson,
+    Value<String>? understoodBy,
+    Value<String>? currency,
+    Value<DateTime>? periodStart,
+    Value<DateTime>? periodEnd,
+    Value<DateTime>? appliedAt,
+    Value<DateTime?>? undoneAt,
+    Value<String?>? supersededBy,
+    Value<int>? rowid,
+  }) {
+    return SmartPlansCompanion(
+      id: id ?? this.id,
+      status: status ?? this.status,
+      proposalJson: proposalJson ?? this.proposalJson,
+      explanationJson: explanationJson ?? this.explanationJson,
+      understoodBy: understoodBy ?? this.understoodBy,
+      currency: currency ?? this.currency,
+      periodStart: periodStart ?? this.periodStart,
+      periodEnd: periodEnd ?? this.periodEnd,
+      appliedAt: appliedAt ?? this.appliedAt,
+      undoneAt: undoneAt ?? this.undoneAt,
+      supersededBy: supersededBy ?? this.supersededBy,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (proposalJson.present) {
+      map['proposal_json'] = Variable<String>(proposalJson.value);
+    }
+    if (explanationJson.present) {
+      map['explanation_json'] = Variable<String>(explanationJson.value);
+    }
+    if (understoodBy.present) {
+      map['understood_by'] = Variable<String>(understoodBy.value);
+    }
+    if (currency.present) {
+      map['currency'] = Variable<String>(currency.value);
+    }
+    if (periodStart.present) {
+      map['period_start'] = Variable<DateTime>(periodStart.value);
+    }
+    if (periodEnd.present) {
+      map['period_end'] = Variable<DateTime>(periodEnd.value);
+    }
+    if (appliedAt.present) {
+      map['applied_at'] = Variable<DateTime>(appliedAt.value);
+    }
+    if (undoneAt.present) {
+      map['undone_at'] = Variable<DateTime>(undoneAt.value);
+    }
+    if (supersededBy.present) {
+      map['superseded_by'] = Variable<String>(supersededBy.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SmartPlansCompanion(')
+          ..write('id: $id, ')
+          ..write('status: $status, ')
+          ..write('proposalJson: $proposalJson, ')
+          ..write('explanationJson: $explanationJson, ')
+          ..write('understoodBy: $understoodBy, ')
+          ..write('currency: $currency, ')
+          ..write('periodStart: $periodStart, ')
+          ..write('periodEnd: $periodEnd, ')
+          ..write('appliedAt: $appliedAt, ')
+          ..write('undoneAt: $undoneAt, ')
+          ..write('supersededBy: $supersededBy, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SmartPlanChangesTable extends SmartPlanChanges
+    with TableInfo<$SmartPlanChangesTable, SmartPlanChangeRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SmartPlanChangesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _planIdMeta = const VerificationMeta('planId');
+  @override
+  late final GeneratedColumn<String> planId = GeneratedColumn<String>(
+    'plan_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES smart_plans (id)',
+    ),
+  );
+  static const VerificationMeta _entityMeta = const VerificationMeta('entity');
+  @override
+  late final GeneratedColumn<String> entity = GeneratedColumn<String>(
+    'entity',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entityIdMeta = const VerificationMeta(
+    'entityId',
+  );
+  @override
+  late final GeneratedColumn<String> entityId = GeneratedColumn<String>(
+    'entity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _categoryIdMeta = const VerificationMeta(
+    'categoryId',
+  );
+  @override
+  late final GeneratedColumn<String> categoryId = GeneratedColumn<String>(
+    'category_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdMeta = const VerificationMeta(
+    'created',
+  );
+  @override
+  late final GeneratedColumn<bool> created = GeneratedColumn<bool>(
+    'created',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("created" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _beforeAmountMinorMeta = const VerificationMeta(
+    'beforeAmountMinor',
+  );
+  @override
+  late final GeneratedColumn<int> beforeAmountMinor = GeneratedColumn<int>(
+    'before_amount_minor',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _afterAmountMinorMeta = const VerificationMeta(
+    'afterAmountMinor',
+  );
+  @override
+  late final GeneratedColumn<int> afterAmountMinor = GeneratedColumn<int>(
+    'after_amount_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    planId,
+    entity,
+    entityId,
+    categoryId,
+    created,
+    beforeAmountMinor,
+    afterAmountMinor,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'smart_plan_changes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SmartPlanChangeRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('plan_id')) {
+      context.handle(
+        _planIdMeta,
+        planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_planIdMeta);
+    }
+    if (data.containsKey('entity')) {
+      context.handle(
+        _entityMeta,
+        entity.isAcceptableOrUnknown(data['entity']!, _entityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityMeta);
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(
+        _entityIdMeta,
+        entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityIdMeta);
+    }
+    if (data.containsKey('category_id')) {
+      context.handle(
+        _categoryIdMeta,
+        categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
+      );
+    }
+    if (data.containsKey('created')) {
+      context.handle(
+        _createdMeta,
+        created.isAcceptableOrUnknown(data['created']!, _createdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdMeta);
+    }
+    if (data.containsKey('before_amount_minor')) {
+      context.handle(
+        _beforeAmountMinorMeta,
+        beforeAmountMinor.isAcceptableOrUnknown(
+          data['before_amount_minor']!,
+          _beforeAmountMinorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('after_amount_minor')) {
+      context.handle(
+        _afterAmountMinorMeta,
+        afterAmountMinor.isAcceptableOrUnknown(
+          data['after_amount_minor']!,
+          _afterAmountMinorMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_afterAmountMinorMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SmartPlanChangeRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SmartPlanChangeRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      planId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_id'],
+      )!,
+      entity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity'],
+      )!,
+      entityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_id'],
+      )!,
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category_id'],
+      ),
+      created: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}created'],
+      )!,
+      beforeAmountMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}before_amount_minor'],
+      ),
+      afterAmountMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}after_amount_minor'],
+      )!,
+    );
+  }
+
+  @override
+  $SmartPlanChangesTable createAlias(String alias) {
+    return $SmartPlanChangesTable(attachedDatabase, alias);
+  }
+}
+
+class SmartPlanChangeRow extends DataClass
+    implements Insertable<SmartPlanChangeRow> {
+  final String id;
+  final String planId;
+  final String entity;
+  final String entityId;
+  final String? categoryId;
+  final bool created;
+  final int? beforeAmountMinor;
+  final int afterAmountMinor;
+  const SmartPlanChangeRow({
+    required this.id,
+    required this.planId,
+    required this.entity,
+    required this.entityId,
+    this.categoryId,
+    required this.created,
+    this.beforeAmountMinor,
+    required this.afterAmountMinor,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['plan_id'] = Variable<String>(planId);
+    map['entity'] = Variable<String>(entity);
+    map['entity_id'] = Variable<String>(entityId);
+    if (!nullToAbsent || categoryId != null) {
+      map['category_id'] = Variable<String>(categoryId);
+    }
+    map['created'] = Variable<bool>(created);
+    if (!nullToAbsent || beforeAmountMinor != null) {
+      map['before_amount_minor'] = Variable<int>(beforeAmountMinor);
+    }
+    map['after_amount_minor'] = Variable<int>(afterAmountMinor);
+    return map;
+  }
+
+  SmartPlanChangesCompanion toCompanion(bool nullToAbsent) {
+    return SmartPlanChangesCompanion(
+      id: Value(id),
+      planId: Value(planId),
+      entity: Value(entity),
+      entityId: Value(entityId),
+      categoryId: categoryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(categoryId),
+      created: Value(created),
+      beforeAmountMinor: beforeAmountMinor == null && nullToAbsent
+          ? const Value.absent()
+          : Value(beforeAmountMinor),
+      afterAmountMinor: Value(afterAmountMinor),
+    );
+  }
+
+  factory SmartPlanChangeRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SmartPlanChangeRow(
+      id: serializer.fromJson<String>(json['id']),
+      planId: serializer.fromJson<String>(json['planId']),
+      entity: serializer.fromJson<String>(json['entity']),
+      entityId: serializer.fromJson<String>(json['entityId']),
+      categoryId: serializer.fromJson<String?>(json['categoryId']),
+      created: serializer.fromJson<bool>(json['created']),
+      beforeAmountMinor: serializer.fromJson<int?>(json['beforeAmountMinor']),
+      afterAmountMinor: serializer.fromJson<int>(json['afterAmountMinor']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'planId': serializer.toJson<String>(planId),
+      'entity': serializer.toJson<String>(entity),
+      'entityId': serializer.toJson<String>(entityId),
+      'categoryId': serializer.toJson<String?>(categoryId),
+      'created': serializer.toJson<bool>(created),
+      'beforeAmountMinor': serializer.toJson<int?>(beforeAmountMinor),
+      'afterAmountMinor': serializer.toJson<int>(afterAmountMinor),
+    };
+  }
+
+  SmartPlanChangeRow copyWith({
+    String? id,
+    String? planId,
+    String? entity,
+    String? entityId,
+    Value<String?> categoryId = const Value.absent(),
+    bool? created,
+    Value<int?> beforeAmountMinor = const Value.absent(),
+    int? afterAmountMinor,
+  }) => SmartPlanChangeRow(
+    id: id ?? this.id,
+    planId: planId ?? this.planId,
+    entity: entity ?? this.entity,
+    entityId: entityId ?? this.entityId,
+    categoryId: categoryId.present ? categoryId.value : this.categoryId,
+    created: created ?? this.created,
+    beforeAmountMinor: beforeAmountMinor.present
+        ? beforeAmountMinor.value
+        : this.beforeAmountMinor,
+    afterAmountMinor: afterAmountMinor ?? this.afterAmountMinor,
+  );
+  SmartPlanChangeRow copyWithCompanion(SmartPlanChangesCompanion data) {
+    return SmartPlanChangeRow(
+      id: data.id.present ? data.id.value : this.id,
+      planId: data.planId.present ? data.planId.value : this.planId,
+      entity: data.entity.present ? data.entity.value : this.entity,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
+      categoryId: data.categoryId.present
+          ? data.categoryId.value
+          : this.categoryId,
+      created: data.created.present ? data.created.value : this.created,
+      beforeAmountMinor: data.beforeAmountMinor.present
+          ? data.beforeAmountMinor.value
+          : this.beforeAmountMinor,
+      afterAmountMinor: data.afterAmountMinor.present
+          ? data.afterAmountMinor.value
+          : this.afterAmountMinor,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SmartPlanChangeRow(')
+          ..write('id: $id, ')
+          ..write('planId: $planId, ')
+          ..write('entity: $entity, ')
+          ..write('entityId: $entityId, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('created: $created, ')
+          ..write('beforeAmountMinor: $beforeAmountMinor, ')
+          ..write('afterAmountMinor: $afterAmountMinor')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    planId,
+    entity,
+    entityId,
+    categoryId,
+    created,
+    beforeAmountMinor,
+    afterAmountMinor,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SmartPlanChangeRow &&
+          other.id == this.id &&
+          other.planId == this.planId &&
+          other.entity == this.entity &&
+          other.entityId == this.entityId &&
+          other.categoryId == this.categoryId &&
+          other.created == this.created &&
+          other.beforeAmountMinor == this.beforeAmountMinor &&
+          other.afterAmountMinor == this.afterAmountMinor);
+}
+
+class SmartPlanChangesCompanion extends UpdateCompanion<SmartPlanChangeRow> {
+  final Value<String> id;
+  final Value<String> planId;
+  final Value<String> entity;
+  final Value<String> entityId;
+  final Value<String?> categoryId;
+  final Value<bool> created;
+  final Value<int?> beforeAmountMinor;
+  final Value<int> afterAmountMinor;
+  final Value<int> rowid;
+  const SmartPlanChangesCompanion({
+    this.id = const Value.absent(),
+    this.planId = const Value.absent(),
+    this.entity = const Value.absent(),
+    this.entityId = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.created = const Value.absent(),
+    this.beforeAmountMinor = const Value.absent(),
+    this.afterAmountMinor = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SmartPlanChangesCompanion.insert({
+    required String id,
+    required String planId,
+    required String entity,
+    required String entityId,
+    this.categoryId = const Value.absent(),
+    required bool created,
+    this.beforeAmountMinor = const Value.absent(),
+    required int afterAmountMinor,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       planId = Value(planId),
+       entity = Value(entity),
+       entityId = Value(entityId),
+       created = Value(created),
+       afterAmountMinor = Value(afterAmountMinor);
+  static Insertable<SmartPlanChangeRow> custom({
+    Expression<String>? id,
+    Expression<String>? planId,
+    Expression<String>? entity,
+    Expression<String>? entityId,
+    Expression<String>? categoryId,
+    Expression<bool>? created,
+    Expression<int>? beforeAmountMinor,
+    Expression<int>? afterAmountMinor,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (planId != null) 'plan_id': planId,
+      if (entity != null) 'entity': entity,
+      if (entityId != null) 'entity_id': entityId,
+      if (categoryId != null) 'category_id': categoryId,
+      if (created != null) 'created': created,
+      if (beforeAmountMinor != null) 'before_amount_minor': beforeAmountMinor,
+      if (afterAmountMinor != null) 'after_amount_minor': afterAmountMinor,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SmartPlanChangesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? planId,
+    Value<String>? entity,
+    Value<String>? entityId,
+    Value<String?>? categoryId,
+    Value<bool>? created,
+    Value<int?>? beforeAmountMinor,
+    Value<int>? afterAmountMinor,
+    Value<int>? rowid,
+  }) {
+    return SmartPlanChangesCompanion(
+      id: id ?? this.id,
+      planId: planId ?? this.planId,
+      entity: entity ?? this.entity,
+      entityId: entityId ?? this.entityId,
+      categoryId: categoryId ?? this.categoryId,
+      created: created ?? this.created,
+      beforeAmountMinor: beforeAmountMinor ?? this.beforeAmountMinor,
+      afterAmountMinor: afterAmountMinor ?? this.afterAmountMinor,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (planId.present) {
+      map['plan_id'] = Variable<String>(planId.value);
+    }
+    if (entity.present) {
+      map['entity'] = Variable<String>(entity.value);
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<String>(entityId.value);
+    }
+    if (categoryId.present) {
+      map['category_id'] = Variable<String>(categoryId.value);
+    }
+    if (created.present) {
+      map['created'] = Variable<bool>(created.value);
+    }
+    if (beforeAmountMinor.present) {
+      map['before_amount_minor'] = Variable<int>(beforeAmountMinor.value);
+    }
+    if (afterAmountMinor.present) {
+      map['after_amount_minor'] = Variable<int>(afterAmountMinor.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SmartPlanChangesCompanion(')
+          ..write('id: $id, ')
+          ..write('planId: $planId, ')
+          ..write('entity: $entity, ')
+          ..write('entityId: $entityId, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('created: $created, ')
+          ..write('beforeAmountMinor: $beforeAmountMinor, ')
+          ..write('afterAmountMinor: $afterAmountMinor, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -11748,6 +12963,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LocalConsentsTable localConsents = $LocalConsentsTable(this);
   late final $FxRatesTable fxRates = $FxRatesTable(this);
   late final $SharedRecordsTable sharedRecords = $SharedRecordsTable(this);
+  late final $SmartPlansTable smartPlans = $SmartPlansTable(this);
+  late final $SmartPlanChangesTable smartPlanChanges = $SmartPlanChangesTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -11770,6 +12989,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     localConsents,
     fxRates,
     sharedRecords,
+    smartPlans,
+    smartPlanChanges,
   ];
 }
 
@@ -18089,6 +19310,825 @@ typedef $$SharedRecordsTableProcessedTableManager =
       SharedRow,
       PrefetchHooks Function()
     >;
+typedef $$SmartPlansTableCreateCompanionBuilder = SmartPlansCompanion Function({
+  required String id,
+  required String status,
+  required String proposalJson,
+  Value<String?> explanationJson,
+  required String understoodBy,
+  required String currency,
+  required DateTime periodStart,
+  required DateTime periodEnd,
+  required DateTime appliedAt,
+  Value<DateTime?> undoneAt,
+  Value<String?> supersededBy,
+  Value<int> rowid,
+});
+typedef $$SmartPlansTableUpdateCompanionBuilder = SmartPlansCompanion Function({
+  Value<String> id,
+  Value<String> status,
+  Value<String> proposalJson,
+  Value<String?> explanationJson,
+  Value<String> understoodBy,
+  Value<String> currency,
+  Value<DateTime> periodStart,
+  Value<DateTime> periodEnd,
+  Value<DateTime> appliedAt,
+  Value<DateTime?> undoneAt,
+  Value<String?> supersededBy,
+  Value<int> rowid,
+});
+
+final class $$SmartPlansTableReferences
+    extends BaseReferences<_$AppDatabase, $SmartPlansTable, SmartPlanRow> {
+  $$SmartPlansTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$SmartPlanChangesTable, List<SmartPlanChangeRow>>
+  _smartPlanChangesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.smartPlanChanges,
+    aliasName: 'smart_plans__id__smart_plan_changes__plan_id',
+  );
+
+  $$SmartPlanChangesTableProcessedTableManager get smartPlanChangesRefs {
+    final manager = $$SmartPlanChangesTableTableManager(
+      $_db,
+      $_db.smartPlanChanges,
+    ).filter((f) => f.planId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _smartPlanChangesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$SmartPlansTableFilterComposer
+    extends Composer<_$AppDatabase, $SmartPlansTable> {
+  $$SmartPlansTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get proposalJson => $composableBuilder(
+    column: $table.proposalJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get explanationJson => $composableBuilder(
+    column: $table.explanationJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get understoodBy => $composableBuilder(
+    column: $table.understoodBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get periodStart => $composableBuilder(
+    column: $table.periodStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get periodEnd => $composableBuilder(
+    column: $table.periodEnd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get appliedAt => $composableBuilder(
+    column: $table.appliedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get undoneAt => $composableBuilder(
+    column: $table.undoneAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get supersededBy => $composableBuilder(
+    column: $table.supersededBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> smartPlanChangesRefs(
+    Expression<bool> Function($$SmartPlanChangesTableFilterComposer f) f,
+  ) {
+    final $$SmartPlanChangesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.smartPlanChanges,
+      getReferencedColumn: (t) => t.planId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SmartPlanChangesTableFilterComposer(
+            $db: $db,
+            $table: $db.smartPlanChanges,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$SmartPlansTableOrderingComposer
+    extends Composer<_$AppDatabase, $SmartPlansTable> {
+  $$SmartPlansTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get proposalJson => $composableBuilder(
+    column: $table.proposalJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get explanationJson => $composableBuilder(
+    column: $table.explanationJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get understoodBy => $composableBuilder(
+    column: $table.understoodBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get periodStart => $composableBuilder(
+    column: $table.periodStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get periodEnd => $composableBuilder(
+    column: $table.periodEnd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get appliedAt => $composableBuilder(
+    column: $table.appliedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get undoneAt => $composableBuilder(
+    column: $table.undoneAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get supersededBy => $composableBuilder(
+    column: $table.supersededBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SmartPlansTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SmartPlansTable> {
+  $$SmartPlansTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get proposalJson => $composableBuilder(
+    column: $table.proposalJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get explanationJson => $composableBuilder(
+    column: $table.explanationJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get understoodBy => $composableBuilder(
+    column: $table.understoodBy,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get currency =>
+      $composableBuilder(column: $table.currency, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get periodStart => $composableBuilder(
+    column: $table.periodStart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get periodEnd =>
+      $composableBuilder(column: $table.periodEnd, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get appliedAt =>
+      $composableBuilder(column: $table.appliedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get undoneAt =>
+      $composableBuilder(column: $table.undoneAt, builder: (column) => column);
+
+  GeneratedColumn<String> get supersededBy => $composableBuilder(
+    column: $table.supersededBy,
+    builder: (column) => column,
+  );
+
+  Expression<T> smartPlanChangesRefs<T extends Object>(
+    Expression<T> Function($$SmartPlanChangesTableAnnotationComposer a) f,
+  ) {
+    final $$SmartPlanChangesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.smartPlanChanges,
+      getReferencedColumn: (t) => t.planId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SmartPlanChangesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.smartPlanChanges,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$SmartPlansTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SmartPlansTable,
+          SmartPlanRow,
+          $$SmartPlansTableFilterComposer,
+          $$SmartPlansTableOrderingComposer,
+          $$SmartPlansTableAnnotationComposer,
+          $$SmartPlansTableCreateCompanionBuilder,
+          $$SmartPlansTableUpdateCompanionBuilder,
+          (SmartPlanRow, $$SmartPlansTableReferences),
+          SmartPlanRow,
+          PrefetchHooks Function({bool smartPlanChangesRefs})
+        > {
+  $$SmartPlansTableTableManager(_$AppDatabase db, $SmartPlansTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SmartPlansTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SmartPlansTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SmartPlansTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> proposalJson = const Value.absent(),
+                Value<String?> explanationJson = const Value.absent(),
+                Value<String> understoodBy = const Value.absent(),
+                Value<String> currency = const Value.absent(),
+                Value<DateTime> periodStart = const Value.absent(),
+                Value<DateTime> periodEnd = const Value.absent(),
+                Value<DateTime> appliedAt = const Value.absent(),
+                Value<DateTime?> undoneAt = const Value.absent(),
+                Value<String?> supersededBy = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SmartPlansCompanion(
+                id: id,
+                status: status,
+                proposalJson: proposalJson,
+                explanationJson: explanationJson,
+                understoodBy: understoodBy,
+                currency: currency,
+                periodStart: periodStart,
+                periodEnd: periodEnd,
+                appliedAt: appliedAt,
+                undoneAt: undoneAt,
+                supersededBy: supersededBy,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String status,
+                required String proposalJson,
+                Value<String?> explanationJson = const Value.absent(),
+                required String understoodBy,
+                required String currency,
+                required DateTime periodStart,
+                required DateTime periodEnd,
+                required DateTime appliedAt,
+                Value<DateTime?> undoneAt = const Value.absent(),
+                Value<String?> supersededBy = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SmartPlansCompanion.insert(
+                id: id,
+                status: status,
+                proposalJson: proposalJson,
+                explanationJson: explanationJson,
+                understoodBy: understoodBy,
+                currency: currency,
+                periodStart: periodStart,
+                periodEnd: periodEnd,
+                appliedAt: appliedAt,
+                undoneAt: undoneAt,
+                supersededBy: supersededBy,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$SmartPlansTable, SmartPlanRow>(table),
+                  $$SmartPlansTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({smartPlanChangesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (smartPlanChangesRefs) db.smartPlanChanges,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (smartPlanChangesRefs)
+                    await $_getPrefetchedDataByColumns<
+                      SmartPlanRow,
+                      $SmartPlansTable,
+                      SmartPlanChangeRow,
+                      $SmartPlanChangesTable
+                    >(
+                      currentTable: table,
+                      referencedTable: $$SmartPlansTableReferences
+                          ._smartPlanChangesRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$SmartPlansTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).smartPlanChangesRefs,
+                      currentColumn: 'id',
+                      referencedColumn: 'plan_id',
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SmartPlansTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SmartPlansTable,
+      SmartPlanRow,
+      $$SmartPlansTableFilterComposer,
+      $$SmartPlansTableOrderingComposer,
+      $$SmartPlansTableAnnotationComposer,
+      $$SmartPlansTableCreateCompanionBuilder,
+      $$SmartPlansTableUpdateCompanionBuilder,
+      (SmartPlanRow, $$SmartPlansTableReferences),
+      SmartPlanRow,
+      PrefetchHooks Function({bool smartPlanChangesRefs})
+    >;
+typedef $$SmartPlanChangesTableCreateCompanionBuilder =
+    SmartPlanChangesCompanion Function({
+      required String id,
+      required String planId,
+      required String entity,
+      required String entityId,
+      Value<String?> categoryId,
+      required bool created,
+      Value<int?> beforeAmountMinor,
+      required int afterAmountMinor,
+      Value<int> rowid,
+    });
+typedef $$SmartPlanChangesTableUpdateCompanionBuilder =
+    SmartPlanChangesCompanion Function({
+      Value<String> id,
+      Value<String> planId,
+      Value<String> entity,
+      Value<String> entityId,
+      Value<String?> categoryId,
+      Value<bool> created,
+      Value<int?> beforeAmountMinor,
+      Value<int> afterAmountMinor,
+      Value<int> rowid,
+    });
+
+final class $$SmartPlanChangesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $SmartPlanChangesTable,
+          SmartPlanChangeRow
+        > {
+  $$SmartPlanChangesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $SmartPlansTable _planIdTable(_$AppDatabase db) =>
+      db.smartPlans.createAlias('smart_plan_changes__plan_id__smart_plans__id');
+
+  $$SmartPlansTableProcessedTableManager get planId {
+    final $_column = $_itemColumn<String>('plan_id')!;
+
+    final manager = $$SmartPlansTableTableManager(
+      $_db,
+      $_db.smartPlans,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_planIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$SmartPlanChangesTableFilterComposer
+    extends Composer<_$AppDatabase, $SmartPlanChangesTable> {
+  $$SmartPlanChangesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entity => $composableBuilder(
+    column: $table.entity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get categoryId => $composableBuilder(
+    column: $table.categoryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get created => $composableBuilder(
+    column: $table.created,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get beforeAmountMinor => $composableBuilder(
+    column: $table.beforeAmountMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get afterAmountMinor => $composableBuilder(
+    column: $table.afterAmountMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$SmartPlansTableFilterComposer get planId {
+    final $$SmartPlansTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.smartPlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SmartPlansTableFilterComposer(
+            $db: $db,
+            $table: $db.smartPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SmartPlanChangesTableOrderingComposer
+    extends Composer<_$AppDatabase, $SmartPlanChangesTable> {
+  $$SmartPlanChangesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entity => $composableBuilder(
+    column: $table.entity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get categoryId => $composableBuilder(
+    column: $table.categoryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get created => $composableBuilder(
+    column: $table.created,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get beforeAmountMinor => $composableBuilder(
+    column: $table.beforeAmountMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get afterAmountMinor => $composableBuilder(
+    column: $table.afterAmountMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$SmartPlansTableOrderingComposer get planId {
+    final $$SmartPlansTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.smartPlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SmartPlansTableOrderingComposer(
+            $db: $db,
+            $table: $db.smartPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SmartPlanChangesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SmartPlanChangesTable> {
+  $$SmartPlanChangesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get entity =>
+      $composableBuilder(column: $table.entity, builder: (column) => column);
+
+  GeneratedColumn<String> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
+
+  GeneratedColumn<String> get categoryId => $composableBuilder(
+    column: $table.categoryId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get created =>
+      $composableBuilder(column: $table.created, builder: (column) => column);
+
+  GeneratedColumn<int> get beforeAmountMinor => $composableBuilder(
+    column: $table.beforeAmountMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get afterAmountMinor => $composableBuilder(
+    column: $table.afterAmountMinor,
+    builder: (column) => column,
+  );
+
+  $$SmartPlansTableAnnotationComposer get planId {
+    final $$SmartPlansTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.planId,
+      referencedTable: $db.smartPlans,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SmartPlansTableAnnotationComposer(
+            $db: $db,
+            $table: $db.smartPlans,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SmartPlanChangesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SmartPlanChangesTable,
+          SmartPlanChangeRow,
+          $$SmartPlanChangesTableFilterComposer,
+          $$SmartPlanChangesTableOrderingComposer,
+          $$SmartPlanChangesTableAnnotationComposer,
+          $$SmartPlanChangesTableCreateCompanionBuilder,
+          $$SmartPlanChangesTableUpdateCompanionBuilder,
+          (SmartPlanChangeRow, $$SmartPlanChangesTableReferences),
+          SmartPlanChangeRow,
+          PrefetchHooks Function({bool planId})
+        > {
+  $$SmartPlanChangesTableTableManager(
+    _$AppDatabase db,
+    $SmartPlanChangesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SmartPlanChangesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SmartPlanChangesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SmartPlanChangesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> planId = const Value.absent(),
+                Value<String> entity = const Value.absent(),
+                Value<String> entityId = const Value.absent(),
+                Value<String?> categoryId = const Value.absent(),
+                Value<bool> created = const Value.absent(),
+                Value<int?> beforeAmountMinor = const Value.absent(),
+                Value<int> afterAmountMinor = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SmartPlanChangesCompanion(
+                id: id,
+                planId: planId,
+                entity: entity,
+                entityId: entityId,
+                categoryId: categoryId,
+                created: created,
+                beforeAmountMinor: beforeAmountMinor,
+                afterAmountMinor: afterAmountMinor,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String planId,
+                required String entity,
+                required String entityId,
+                Value<String?> categoryId = const Value.absent(),
+                required bool created,
+                Value<int?> beforeAmountMinor = const Value.absent(),
+                required int afterAmountMinor,
+                Value<int> rowid = const Value.absent(),
+              }) => SmartPlanChangesCompanion.insert(
+                id: id,
+                planId: planId,
+                entity: entity,
+                entityId: entityId,
+                categoryId: categoryId,
+                created: created,
+                beforeAmountMinor: beforeAmountMinor,
+                afterAmountMinor: afterAmountMinor,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$SmartPlanChangesTable, SmartPlanChangeRow>(
+                    table,
+                  ),
+                  $$SmartPlanChangesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({planId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (planId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.planId,
+                        referencedTable: $$SmartPlanChangesTableReferences
+                            ._planIdTable(db),
+                        referencedColumn: $$SmartPlanChangesTableReferences
+                            ._planIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SmartPlanChangesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SmartPlanChangesTable,
+      SmartPlanChangeRow,
+      $$SmartPlanChangesTableFilterComposer,
+      $$SmartPlanChangesTableOrderingComposer,
+      $$SmartPlanChangesTableAnnotationComposer,
+      $$SmartPlanChangesTableCreateCompanionBuilder,
+      $$SmartPlanChangesTableUpdateCompanionBuilder,
+      (SmartPlanChangeRow, $$SmartPlanChangesTableReferences),
+      SmartPlanChangeRow,
+      PrefetchHooks Function({bool planId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -18127,4 +20167,8 @@ class $AppDatabaseManager {
       $$FxRatesTableTableManager(_db, _db.fxRates);
   $$SharedRecordsTableTableManager get sharedRecords =>
       $$SharedRecordsTableTableManager(_db, _db.sharedRecords);
+  $$SmartPlansTableTableManager get smartPlans =>
+      $$SmartPlansTableTableManager(_db, _db.smartPlans);
+  $$SmartPlanChangesTableTableManager get smartPlanChanges =>
+      $$SmartPlanChangesTableTableManager(_db, _db.smartPlanChanges);
 }

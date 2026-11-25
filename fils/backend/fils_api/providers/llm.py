@@ -24,13 +24,13 @@ class LLMResult:
 class LLMProvider(Protocol):
     name: str
 
-    def chat(self, messages: list[dict], tools: list[dict] | None = None, json_schema: dict | None = None, max_tokens: int = 800) -> LLMResult: ...
+    def chat(self, messages: list[dict], tools: list[dict] | None = None, json_schema: dict | None = None, max_tokens: int = 800, tool_choice: str | None = None) -> LLMResult: ...
 
 
 class DisabledProvider:
     name = "disabled"
 
-    def chat(self, messages, tools=None, json_schema=None, max_tokens=800) -> LLMResult:
+    def chat(self, messages, tools=None, json_schema=None, max_tokens=800, tool_choice=None) -> LLMResult:
         raise APIError(503, "provider_not_configured", "Cloud AI is not configured on this server")
 
 
@@ -46,11 +46,11 @@ class AzureOpenAIProvider:
         self.api_version = api_version
         self.client = client or httpx.Client(timeout=30.0)
 
-    def chat(self, messages, tools=None, json_schema=None, max_tokens=800) -> LLMResult:
+    def chat(self, messages, tools=None, json_schema=None, max_tokens=800, tool_choice=None) -> LLMResult:
         body: dict[str, Any] = {"messages": messages, "max_tokens": max_tokens, "temperature": 0.1}
         if tools:
             body["tools"] = [{"type": "function", "function": t} for t in tools]
-            body["tool_choice"] = "auto"
+            body["tool_choice"] = {"type": "function", "function": {"name": tool_choice}} if tool_choice else "auto"
         if json_schema:
             body["response_format"] = {"type": "json_schema", "json_schema": {"name": "extraction", "schema": json_schema, "strict": True}}
         url = f"{self.endpoint}/openai/deployments/{self.deployment}/chat/completions?api-version={self.api_version}"
@@ -92,8 +92,8 @@ class FakeProvider:
         self.responses: list[LLMResult] = []
         self.calls: list[dict] = []
 
-    def chat(self, messages, tools=None, json_schema=None, max_tokens=800) -> LLMResult:
-        self.calls.append({"messages": messages, "tools": tools, "json_schema": json_schema})
+    def chat(self, messages, tools=None, json_schema=None, max_tokens=800, tool_choice=None) -> LLMResult:
+        self.calls.append({"messages": messages, "tools": tools, "json_schema": json_schema, "tool_choice": tool_choice, "max_tokens": max_tokens})
         if self.responses:
             return self.responses.pop(0)
         return LLMResult(content="ok", input_tokens=10, output_tokens=5, provider="fake", model="fake-1")

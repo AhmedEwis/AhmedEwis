@@ -290,6 +290,41 @@ class SharedRecords extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// v5: a savings plan the user confirmed ("My Smart Plan"). Local only, never synced:
+/// the budgets and goals it changes sync as usual. The snapshot holds computed facts and
+/// actions, never raw bank text, merchant names or account identifiers.
+@DataClassName('SmartPlanRow')
+class SmartPlans extends Table {
+  TextColumn get id => text()();
+  TextColumn get status => text()(); // applied|undone|superseded
+  TextColumn get proposalJson => text()();
+  TextColumn get explanationJson => text().nullable()();
+  TextColumn get understoodBy => text()(); // local|ai
+  TextColumn get currency => text()();
+  DateTimeColumn get periodStart => dateTime()();
+  DateTimeColumn get periodEnd => dateTime()();
+  DateTimeColumn get appliedAt => dateTime()();
+  DateTimeColumn get undoneAt => dateTime().nullable()();
+  TextColumn get supersededBy => text().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// v5: exactly what applying a plan changed, so Undo restores it precisely.
+@DataClassName('SmartPlanChangeRow')
+class SmartPlanChanges extends Table {
+  TextColumn get id => text()();
+  TextColumn get planId => text().references(SmartPlans, #id)();
+  TextColumn get entity => text()(); // budget|goal
+  TextColumn get entityId => text()();
+  TextColumn get categoryId => text().nullable()();
+  BoolColumn get created => boolean()(); // the plan created it (undo removes it)
+  IntColumn get beforeAmountMinor => integer().nullable()();
+  IntColumn get afterAmountMinor => integer()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @DriftDatabase(tables: [
   Accounts,
   Transactions,
@@ -308,12 +343,14 @@ class SharedRecords extends Table {
   LocalConsents,
   FxRates,
   SharedRecords,
+  SmartPlans,
+  SmartPlanChanges,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -360,6 +397,11 @@ class AppDatabase extends _$AppDatabase {
             final cols = await sourceEventColumns();
             if (!cols.contains('match_candidates')) await m.addColumn(sourceEvents, sourceEvents.matchCandidates);
             if (!cols.contains('held_group')) await m.addColumn(sourceEvents, sourceEvents.heldGroup);
+          }
+          // v4 → v5: My Smart Plan. Two new local tables; nothing existing is touched.
+          if (from < 5) {
+            await m.createTable(smartPlans);
+            await m.createTable(smartPlanChanges);
           }
         },
         beforeOpen: (details) async {

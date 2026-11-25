@@ -234,6 +234,7 @@ class ApiClient {
   Future<Map<String, dynamic>> extract(String text, {String? sender, String? localeHint}) async =>
       await request('POST', '/v1/ingest/extract', body: {'text': text, if (sender != null) 'sender': sender, if (localeHint != null) 'locale_hint': localeHint}) as Map<String, dynamic>;
   Future<Map<String, dynamic>> assistantTurn(Map<String, dynamic> body) async => await request('POST', '/v1/assistant/turn', body: body, retries: 0) as Map<String, dynamic>;
+  Future<Map<String, dynamic>> assistantPlan(Map<String, dynamic> body) async => await request('POST', '/v1/assistant/plan', body: body, retries: 0) as Map<String, dynamic>;
   Future<Map<String, dynamic>> voiceToken() async => await request('POST', '/v1/voice/token') as Map<String, dynamic>;
   Future<Map<String, dynamic>> voiceConfig() async => await request('GET', '/v1/voice/config') as Map<String, dynamic>;
   Future<Map<String, dynamic>> submitSample(Map<String, dynamic> body) async => await request('POST', '/v1/samples', body: body, idempotencyKey: const Uuid().v4()) as Map<String, dynamic>;

@@ -31,6 +31,24 @@ All four findings were reproduced with failing tests on the old code, then fixed
 | Found while preparing the device test | A Shortcut retry double-posted, because each run has a new ID. Now an identical Shortcut text within 24 hours is a recorded duplicate, and the banner says "Already in Fils" |
 | Device path | `.github/workflows/ios-testflight.yml` (secret preflight, then archive, export, TestFlight upload), `ios/ExportOptions.plist`, `docs/device-acceptance.md` |
 
+## Round 9: My Smart Plan (خطتي الذكية), a new feature
+
+Explicitly authorized beyond the freeze. Design, privacy and status: `fils/docs/smart-plan.md`.
+
+**Please review:**
+- `lib/core/planner/` (`goal_parser.dart`, `plan_engine.dart`, `plan_models.dart`);
+- `lib/data/planner/` (`plan_service.dart`, `cloud_planner.dart`);
+- `lib/features/smart_plan/`;
+- schema v5 in `db/database.dart`;
+- `backend/fils_api/routers/assistant.py` (`/assistant/plan`).
+
+**Key claims to verify:**
+- The model can't set or change an amount.
+- Preview writes nothing.
+- Apply and undo are atomic and idempotent.
+- No raw data leaves the device.
+- Missing history is never treated as zero.
+
 ## Round 8: Android acceptance uses an allowed notification source
 
 - N5–N7 relied on a messaging app that `FilsNotificationListener` blocks. The block list is kept.
