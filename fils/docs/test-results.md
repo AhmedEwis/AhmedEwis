@@ -27,6 +27,16 @@ Design, privacy and status: [smart-plan.md](smart-plan.md). New tests: 46 on mob
 - The suite passed (4 variants), now including `smart_plan` and `smart_plan_actions` in EN, AR, light and dark.
 - Flow frames from the real UI test, assembled into `docs/screenshots/smart_plan_flow.gif`: request, understood, why, preview, applied, undone.
 
+**CI (`3e2dd61`, re-runs on `b428922`):**
+- `backend-ci` `45593356124`: success (tests and Docker image).
+- `security` `45593355962` and `45596034344`: success.
+- `mobile-ci` `45593356017`: Android tests passed. The iOS build was first **cancelled because GitHub had no macOS runner capacity** ("not acquired by Runner … capacity constraints"); its re-run succeeded.
+- `ios-testflight` `45596074066` (dispatched): `archive-unsigned` succeeded. The preflight fails by design: Apple signing secrets are missing.
+- `android-internal`:
+  - First run `45593356094` **failed**: Android lint crashed inside the `in_app_purchase_android` plugin (`NoSuchMethodError … List.removeLast()`), because the workflow used JDK 17.
+  - Fixed in `b428922` by switching to JDK 21, as mobile-ci uses. Run `45596034234` succeeded: unsigned Play AAB built, `bundletool` manifest `package="kw.fils.fils"`, no SMS or call-log `uses-permission`.
+  - The preflight reports the missing upload-keystore secrets.
+
 **Play-flavor AAB:** an unsigned release bundle builds locally (73.3 MB). Its merged manifest has **no** SMS or call-log `uses-permission`. The signed build is `.github/workflows/android-internal.yml`, which needs the upload-keystore secrets.
 
 ## 0e. Android acceptance correction: allowed synthetic notification source
